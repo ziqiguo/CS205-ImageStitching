@@ -15,6 +15,8 @@ class Stitcher:
 		t0 = time.time()
 		(kpsA, featuresA) = self.detectAndDescribe(imageA)
 		(kpsB, featuresB) = self.detectAndDescribe(imageB)
+		print(kpsA.shape, featuresA.shape)
+		print(kpsB.shape, featuresB.shape)
 		t1 = time.time()
 		print('Feature detection:', t1-t0)
 		
