@@ -2,7 +2,8 @@
 // #include "kmeans.h"
 #include <ctime>
 #include <iostream>
-
+#include "opencv2/highgui/highgui.hpp"
+//https://gist.github.com/yoggy/3246274
 
 int mainImage(void)
 {
@@ -77,33 +78,55 @@ int mainVideo(void)
 int mainStaticMatch()
 {
     IplImage *img1, *img2;
-    img1 = cvLoadImage("../imgs/img1.jpg");
-    img2 = cvLoadImage("../imgs/img2.jpg");
+    img1 = cvLoadImage("../../sequential/img1x.jpg");
+    img2 = cvLoadImage("../../sequential/img2x.jpg");
 
+    cv::Mat m = cv::cvarrToMat(img1);
+
+    std::cout << m.type() << "\n";
+
+
+    // img1 = cvLoadImage("../imgs/img1.jpg");
+    // img2 = cvLoadImage("../imgs/img2.jpg");
     IpVec ipts1, ipts2;
+
+    //clock_t start = clock();
     surfDetDes(img1,ipts1,false,4,4,2,0.0001f);
     surfDetDes(img2,ipts2,false,4,4,2,0.0001f);
-
+    //clock_t end = clock();
+    //std::cout<< "OpenSURF took: " << float(end - start) / CLOCKS_PER_SEC    << " seconds to find Ipts and their FDes." << std::endl;
     IpPairVec matches;
-    getMatches(ipts1,ipts2,matches);
+    clock_t start = clock();
+    //getMatchesKDTree(ipts1, ipts2, matches);
+    getMatches(ipts1, ipts2, matches);
+    clock_t end = clock();
+    std::cout << "OpenSURF took: " << float(end - start) / CLOCKS_PER_SEC << " seconds to get matches." << std::endl;
 
-    for (unsigned int i = 0; i < matches.size(); ++i)
-    {
-        drawPoint(img1,matches[i].first);
-        drawPoint(img2,matches[i].second);
-    
-        const int & w = img1->width;
-        cvLine(img1,cvPoint(matches[i].first.x,matches[i].first.y),cvPoint(matches[i].second.x+w,matches[i].second.y), cvScalar(255,255,255),1);
-        cvLine(img2,cvPoint(matches[i].first.x-w,matches[i].first.y),cvPoint(matches[i].second.x,matches[i].second.y), cvScalar(255,255,255),1);
-    }
+    // start = clock();
+    // cv::Mat warpped = getCvWarpped(matches, img2);
+    // end = clock();
+    // std::cout<< "compute H, warpping took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
+    // start = clock();
+    // cv::Mat stitched = getCvStitch(img1, warpped);
+    // end = clock();
+    // std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
+    // cv::Mat warpped = getWarppedReMap(matches, img2);
 
-    std::cout<< "Matches: " << matches.size();
-
-    cvNamedWindow("1", CV_WINDOW_AUTOSIZE );
-    cvNamedWindow("2", CV_WINDOW_AUTOSIZE );
-    cvShowImage("1", img1);
-    cvShowImage("2",img2);
-    cvWaitKey(0);
+    start = clock();
+    cv::Mat warpped = getWarpped(matches, img2);
+    end = clock();
+    std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+    start = clock();
+    cv::Mat stitched = getCvStitch(img1, warpped);
+    end = clock();
+    std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+    // cv::namedWindow("stitched", CV_WINDOW_AUTOSIZE );
+    // cv::namedWindow("1", CV_WINDOW_AUTOSIZE );
+    // cv::namedWindow("2", CV_WINDOW_AUTOSIZE );
+    // cvShowImage("1", img1);
+    // cv::imshow("2", warpped);
+    // cv::imshow("stitched", stitched);
+    // cvWaitKey(0);
 
     return 0;
 }

@@ -228,7 +228,6 @@ void FastHessian::buildResponseLayer(ResponseLayer *rl)
 }
     
 //-------------------------------------------------------
-
 //! Non Maximal Suppression function
 int FastHessian::isExtremum(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b)
 {

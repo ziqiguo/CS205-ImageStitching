@@ -14,8 +14,11 @@ typedef std::vector<std::pair<Ipoint, Ipoint> > IpPairVec;
 
 //! Ipoint operations
 void getMatches(IpVec &ipts1, IpVec &ipts2, IpPairVec &matches);
-int translateCorners(IpPairVec &matches, const CvPoint src_corners[4], CvPoint dst_corners[4]);
-
+// void getMatchesKDTree(IpVec &ipts1, IpVec &ipts2, IpPairVec &matches);
+cv::Mat getCvWarpped(IpPairVec &matches, IplImage *original);
+cv::Mat getCvStitch(IplImage *src, cv::Mat warpped);
+cv::Mat getWarpped(IpPairVec &matches, IplImage *original);
+cv::Mat getWarppedReMap(IpPairVec &matches, IplImage *original);
 //-------------------------------------------------------
 
 class Ipoint {

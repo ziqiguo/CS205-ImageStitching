@@ -144,7 +144,6 @@ void Surf::getOrientation()
             orientation = getAngle(sumX, sumY);
         }
     }
-
     // assign orientation of the dominant response vector
     ipt->orientation = orientation;
 }
