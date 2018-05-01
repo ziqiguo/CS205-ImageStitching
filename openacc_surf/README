@@ -1,0 +1,10 @@
+On machine with GTX GPU, compile with: pgc++ -acc -ta=tesla:cc60 -Minfo -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs` 
+
+(Not tested yet)On machine with Tesla GPU, compile with: pgc++ -acc -ta=tesla:managed -Minfo -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs` 
+
+./test [mode] [openacc mem copy mode]
+
+first mode argument: 
+	0 -> extract features from single image
+	1 -> extract features and compute matches
+	2 -> extract features from video frames
