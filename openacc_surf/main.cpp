@@ -8,8 +8,8 @@ int mainImage(int single_mem_cpy)
 {
     // Declare Ipoints and other stuff
     IpVec ipts;
-    // IplImage *img=cvLoadImage("../imgs/IMG_5053.jpg");
-    IplImage *img=cvLoadImage("../images/img1.jpg");
+    // IplImage *img=cvLoadImage("../images/img1.jpg");
+    IplImage *img=cvLoadImage("../images/1.png");
     
 
     // Detect and describe interest points in the image
@@ -79,8 +79,10 @@ int mainVideo(int single_mem_cpy)
 int mainStaticMatch(int single_mem_cpy)
 {
     IplImage *img1, *img2;
-    img1 = cvLoadImage("../images/img1.jpg");
-    img2 = cvLoadImage("../images/img2.jpg");
+    // img1 = cvLoadImage("../images/img1.jpg");
+    // img2 = cvLoadImage("../images/img2.jpg");
+    img1 = cvLoadImage("../images/1.png");
+    img2 = cvLoadImage("../images/2.png");
 
     clock_t start = clock();
     IpVec ipts1, ipts2;
