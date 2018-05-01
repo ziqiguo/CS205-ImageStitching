@@ -272,30 +272,43 @@ Mat Harris::meanFilter(Mat& intImg, int range) {
 Mat Harris::gaussFilter(Mat& img, int range) {
     // Helper Mats for better time complexity
     // Mat gaussHelperV(img.rows-range*2, img.cols-range*2, CV_32F);
-    float** gaussHelperV = new float*[img.rows-range*2];
-    for(int i = 0; i < img.rows-range*2; i++)
-        gaussHelperV[i] = new float[img.cols-range*2];
 
-    float** gauss_data = new float*[img.rows-range*2];
-    for(int i = 0; i < img.rows-range*2; i++)
-        gauss_data[i] = new float[img.cols-range*2];
+    float* gaussHelperV = new float[(img.rows-range*2)*(img.cols-range*2)];
+
+    // float** gaussHelperV = new float*[img.rows-range*2];
+    // for(int i = 0; i < img.rows-range*2; i++)
+    //     gaussHelperV[i] = new float[img.cols-range*2];
+
+    float* gauss_data = new float[(img.rows-range*2)*(img.cols-range*2)];
+    // float** gauss_data = new float*[img.rows-range*2];
+    // for(int i = 0; i < img.rows-range*2; i++)
+    //     gauss_data[i] = new float[img.cols-range*2];
 
     int img_row = img.rows;
     int img_col = img.cols;
 
-    float** img_data = new float*[img.rows];
+    // float** img_data = new float*[img.rows];
+    // for(int i = 0; i < img.rows; i++)
+    // {
+    //     img_data[i] = new float[img.cols];
+    //     for(int j = 0; j < img.cols; j++)
+    //     {
+    //         img_data[i][j] = img.at<float>(i, j);
+    //     }
+    // } 
+
+    float* img_data = new float[img.rows*img.cols];
     for(int i = 0; i < img.rows; i++)
     {
-        img_data[i] = new float[img.cols];
         for(int j = 0; j < img.cols; j++)
         {
-            img_data[i][j] = img.at<float>(i, j);
+            img_data[i*img_col+j] = img.at<float>(i, j);
         }
     } 
 
-    #pragma acc data copyin(img_data[0:img.rows][0:img.cols], img_row, img_col,\
-             range, gaussHelperV[0:img.rows-range*2][0:img.cols-range*2]) \
-             copy(gauss_data[0:img.rows-range*2][0:img.cols-range*2])
+    #pragma acc data copyin(img_data[0:img.rows*img.cols], img_row, img_col,\
+             range, gaussHelperV[0:(img.rows-range*2)*(img.cols-range*2)]) \
+             copy(gauss_data[0:(img.rows-range*2)*(img.cols-range*2)])
     {
 
     #pragma acc parallel loop
@@ -305,18 +318,18 @@ Mat Harris::gaussFilter(Mat& img, int range) {
         for(int c=range; c<img_col-range; c++)
         {
             float res = 0;
-            #pragma acc loop
+            // #pragma acc loop
             for(int x = -range; x<=range; x++)
             {
                 float m = 1/sqrt(2*M_PI)*exp(-0.5*x*x);
 
                 // res += m * img.at<float>(r-range,c-range);
                 // #pragma acc atomic
-                res += m * img_data[r-range][c-range];
+                res += m * img_data[(r-range)*img_col + c-range];
             }
 
             // gaussHelperV.at<float>(r-range,c-range) = res;
-            gaussHelperV[r-range][c-range] = res;
+            gaussHelperV[(r-range)*(img_col-range*2) + c-range] = res;
         }
     }
 
@@ -329,16 +342,16 @@ Mat Harris::gaussFilter(Mat& img, int range) {
         for(int c=range; c<img_col-range; c++)
         {
             float res = 0;
-            #pragma acc loop
+            // #pragma acc loop
             for(int x = -range; x<=range; x++)
             {
                 float m = 1/sqrt(2*M_PI)*exp(-0.5*x*x);
 
                 // res += m * gaussHelperV.at<float>(r-range,c-range);
-                res += m * gaussHelperV[r-range][c-range];
+                res += m * gaussHelperV[(r-range)*(img_col-range*2) + c-range];
             }
 
-            gauss_data[r-range][c-range] = res;
+            gauss_data[(r-range)*(img_col-range*2) + c-range] = res;
         }
     }
 
@@ -349,7 +362,7 @@ Mat Harris::gaussFilter(Mat& img, int range) {
     {
         for(int j = 0; j < img.cols-range*2; j++)
         {
-            gauss.at<float>(i, j) = gauss_data[i][j];
+            gauss.at<float>(i, j) = gauss_data[i*(img.cols-range*2) + j];
         }
     }
 
