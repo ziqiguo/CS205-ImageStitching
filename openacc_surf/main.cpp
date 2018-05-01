@@ -35,14 +35,15 @@ int mainVideo(int single_mem_cpy)
 {
     // Initialise capture device
     CvCapture* capture = cvCaptureFromCAM( CV_CAP_ANY );
-    if(!capture) error("No Capture");
+    if(!capture) 
+        error("No Capture");
 
     // Initialise video writer
     //cv::VideoWriter vw("c:\\out.avi", CV_FOURCC('D','I','V','X'),10,cvSize(320,240),1);
     //vw << img;
 
     // Create a window 
-    cvNamedWindow("OpenSURF", CV_WINDOW_AUTOSIZE );
+    cvNamedWindow("Stitching view", CV_WINDOW_AUTOSIZE );
 
     // Declare Ipoints and other stuff
     IpVec ipts;
@@ -64,14 +65,14 @@ int mainVideo(int single_mem_cpy)
         drawFPS(img);
 
         // Display the result
-        cvShowImage("OpenSURF", img);
+        cvShowImage("Stitching view", img);
 
         // If ESC key pressed exit loop
         if( (cvWaitKey(10) & 255) == 27 ) break;
     }
 
     cvReleaseCapture( &capture );
-    cvDestroyWindow( "OpenSURF" );
+    cvDestroyWindow( "Stitching view" );
     return 0;
 }
 

@@ -247,6 +247,8 @@ void FastHessian::buildResponseMap()
         int img_width = img->width;
         float *img_data = (float *) img->imageData;
 
+        clock_t start=clock();
+
         // Extract responses from the image
         #pragma acc data copyin(step_arr[0:rsize], b_arr[0:rsize], l_arr[0:rsize], w_arr[0:rsize],\
                  height_arr[0:rsize], width_arr[0:rsize], size_arr[0:rsize], img_step, img_width, img_height, img_data[0:img_height*img_width])\
@@ -296,6 +298,8 @@ void FastHessian::buildResponseMap()
         }
 
         }
+
+        cout << "Real acc time took:" << (clock()-start)/ (double)(CLOCKS_PER_SEC / 1000) << "ms" << endl;
 
         // copy cuda memory back
         int curr_size = 0; 
