@@ -4,6 +4,8 @@
 
 #include <cv.h>
 #include <highgui.h>
+#include <ctime>
+#include <iostream>
 
 #include "integral.h"
 #include "fasthessian.h"
@@ -34,7 +36,10 @@ inline void surfDetDes(IplImage *img,    /* image to find Ipoints in */
     Surf des(int_img, ipts);
 
     // Extract the descriptors for the ipts
+    clock_t t0 = clock();
     des.getDescriptors(upright);
+    clock_t t1 = clock();
+    std::cout<< "Get descriptors: " << float(t1 - t0) / CLOCKS_PER_SEC << std::endl;
 
     // Deallocate the integral image
     cvReleaseImage(&int_img);

@@ -8,11 +8,11 @@ int mainImage(void)
 {
     // Declare Ipoints and other stuff
     IpVec ipts;
-    IplImage *img=cvLoadImage("../imgs/sf.jpg");
+    IplImage *img=cvLoadImage("../images/img1.jpg");
 
     // Detect and describe interest points in the image
     clock_t start = clock();
-    surfDetDes(img, ipts, false, 5, 4, 2, 0.0004f); 
+    surfDetDes(img, ipts, false, 5, 4, 2, 0.0001f); 
     clock_t end = clock();
 
     std::cout<< "OpenSURF found: " << ipts.size() << " interest points" << std::endl;
@@ -77,8 +77,8 @@ int mainVideo(void)
 int mainStaticMatch()
 {
     IplImage *img1, *img2;
-    img1 = cvLoadImage("../imgs/img1.jpg");
-    img2 = cvLoadImage("../imgs/img2.jpg");
+    img1 = cvLoadImage("../images/img1.jpg");
+    img2 = cvLoadImage("../images/img2.jpg");
 
     IpVec ipts1, ipts2;
     surfDetDes(img1,ipts1,false,4,4,2,0.0001f);

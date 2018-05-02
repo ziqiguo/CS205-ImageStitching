@@ -51,11 +51,13 @@ void Surf::getDescriptors(bool upright)
 
     // Get the size of the vector for fixed loop bounds
     int ipts_size = (int)ipts.size();
+    int i;
 
     if (upright)
     {
         // U-SURF loop just gets descriptors
-        for (int i = 0; i < ipts_size; ++i)
+        #pragma omp parallel for private(i) shared(ipts) schedule(dynamic)
+        for (i = 0; i < ipts_size; ++i)
         {
             // Set the Ipoint to be described
             index = i;
@@ -67,7 +69,8 @@ void Surf::getDescriptors(bool upright)
     else
     {
         // Main SURF-64 loop assigns orientations and gets descriptors
-        for (int i = 0; i < ipts_size; ++i)
+        #pragma omp parallel for private(i) shared(ipts) schedule(dynamic)
+        for (i = 0; i < ipts_size; ++i)
         {
             // Set the Ipoint to be described
             index = i;
