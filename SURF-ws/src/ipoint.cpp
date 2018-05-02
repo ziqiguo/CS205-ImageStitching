@@ -235,6 +235,7 @@ cv::Mat getWarppedReMap(IpPairVec &matches, IplImage *original)
 //     return warp;
 
 //}
+
 cv::Mat getWarpped(IpPairVec &matches, IplImage *original)
 {
     std::vector<cv::Point2f> pt1s;
@@ -253,13 +254,11 @@ cv::Mat getWarpped(IpPairVec &matches, IplImage *original)
     end = clock();
     std::cout << "findHomography took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
 
-
     cv::Mat src = cv::cvarrToMat(original);
     int h = src.rows, w = src.cols;
     cv::Mat warp(h, w*2, CV_8UC3);
 
     #pragma omp parallel for shared(H, src, warp, h, w)
-    
     for(int i = 0; i < h; ++i) {
         for(int j = 0; j < w; ++j) {
 
@@ -291,10 +290,91 @@ cv::Mat getWarpped(IpPairVec &matches, IplImage *original)
         }
     }
 
-    //cv::Mat smoothed;
-    //cv::GaussianBlur(warp, smoothed, cv::Size(3,3), 0.5, 0);
-    //cv::medianBlur(warp, smoothed, 5);
-    return warp;//smoothed;
+    return warp;
+}
+
+cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original)
+{
+    std::vector<cv::Point2f> pt1s;
+    std::vector<cv::Point2f> pt2s;
+
+    for (int i = 0; i < (int)matches.size(); i++) {
+        pt1s.push_back(cv::Point2f(matches[i].second.x, matches[i].second.y));
+        pt2s.push_back(cv::Point2f(matches[i].first.x, matches[i].first.y));
+    }
+
+    cv::Mat H = cv::findHomography(pt1s, pt2s, CV_RANSAC); // 3x3
+
+    double H_[9] = {
+        H.at<double>(0, 0), H.at<double>(0, 1), H.at<double>(0, 2), 
+        H.at<double>(1, 0), H.at<double>(1, 1), H.at<double>(1, 2), 
+        H.at<double>(2, 0), H.at<double>(2, 1), H.at<double>(2, 2)};
+
+    int h = original->height, w = original->width, step = original->widthStep/sizeof(uchar);
+    int depth = original->depth, channel = original->nChannels;
+
+    uchar* src = (uchar*) original->imageData;
+    //IplImage *int_warp = cvCreateImage(h, w*2, IPL_DEPTH_32F, 3);
+    IplImage *warp = cvCreateImage(cv::Size(w*2, h), depth, channel);
+    // float *warp_data = new float[h*w*2*channel]; // height, wdith, channel
+    int warpStep = warp->widthStep/sizeof(uchar);
+    uchar* warp_data = (uchar *) warp->imageData;
+
+    #pragma acc data copyin(src, h, w,\
+         channel, step, warpStep, warp_data) \
+         copy(warp_data)
+
+    #pragma acc parallel loop
+    for(int i = 0; i < h; ++i) {
+
+        for(int j = 0; j < w; ++j) {
+
+            double z = 1. / (H_[6]* j + H_[7] * i + H_[8]);
+            double x = (H_[0] * j + H_[1] * i + H_[2]) * z;
+            double y = (H_[3] * j + H_[4] * i + H_[5]) * z;
+
+            uchar b = src[i*step+j*channel], g = src[i*step+j*channel+1], r = src[i*step+j*channel+2];
+
+            if (std::floor(x) >= 0 && std::floor(x) < w*2 && std::floor(y) >= 0 && std::floor(y) < h)
+
+                if (std::floor(x) != x || std::floor(y) != y) {
+
+                    int fx = int(std::floor(x)), cx = int(std::ceil(x));
+                    int fy = int(std::floor(y)), cy = int(std::ceil(y));
+                    
+                    if (std::floor(x) >= 0 && std::floor(y) >= 0 && std::ceil(x) < w*2 && std::ceil(y) < h ) {
+
+                        warp_data[fy*warpStep + fx*channel] = b;
+                        warp_data[fy*warpStep + fx*channel + 1] = g;
+                        warp_data[fy*warpStep + fx*channel + 2] = r;
+
+                        warp_data[fy*warpStep + cx*channel] = b;
+                        warp_data[fy*warpStep + cx*channel + 1] = g;
+                        warp_data[fy*warpStep + cx*channel + 2] = r;
+
+                        warp_data[cy*warpStep + fx*channel] = b;
+                        warp_data[cy*warpStep + fx*channel + 1] = g;
+                        warp_data[cy*warpStep + fx*channel + 2] = r;
+
+                        warp_data[cy*warpStep + cx*channel] = b;
+                        warp_data[cy*warpStep + cx*channel + 1] = g;
+                        warp_data[cy*warpStep + cx*channel + 2] = r;
+                            
+                    }else{
+                        warp_data[fy*warpStep + fx*channel] = b;
+                        warp_data[fy*warpStep + fx*channel + 1] = g;
+                        warp_data[fy*warpStep + fx*channel + 2] = r;
+                    }
+                
+                }else{
+                    warp_data[int(y)*warpStep + int(x)*channel] = b;
+                    warp_data[int(y)*warpStep + int(x)*channel + 1] = g;
+                    warp_data[int(y)*warpStep + int(x)*channel + 2] = r;
+                }
+        }
+    }
+
+    return cv::cvarrToMat(warp);
 }
 
 //

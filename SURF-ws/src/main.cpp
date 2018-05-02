@@ -82,10 +82,6 @@ int mainStaticMatch()
     img2 = cvLoadImage("../../sequential/img2y.jpg");
 
     cv::Mat m = cv::cvarrToMat(img1);
-
-    std::cout << m.type() << "\n";
-
-
     // img1 = cvLoadImage("../imgs/img1.jpg");
     // img2 = cvLoadImage("../imgs/img2.jpg");
     IpVec ipts1, ipts2;
@@ -113,7 +109,7 @@ int mainStaticMatch()
     // cv::Mat warpped = getWarppedReMap(matches, img2);
 
     start = clock();
-    cv::Mat warpped = getWarpped(matches, img2);
+    cv::Mat warpped = getWarppedAcc(matches, img2);
     end = clock();
     std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
     start = clock();

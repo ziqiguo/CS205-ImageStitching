@@ -18,8 +18,8 @@ void getMatches(IpVec &ipts1, IpVec &ipts2, IpPairVec &matches);
 cv::Mat getCvWarpped(IpPairVec &matches, IplImage *original);
 cv::Mat getCvStitch(IplImage *src, cv::Mat warpped);
 cv::Mat getWarpped(IpPairVec &matches, IplImage *original);
-// cv::Mat getInverseWarpped(IpPairVec &matches, IplImage *original);
 cv::Mat getWarppedReMap(IpPairVec &matches, IplImage *original);
+cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original);
 //-------------------------------------------------------
 
 class Ipoint {
