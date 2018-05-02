@@ -156,6 +156,9 @@ cv::Mat getWarppedReMap(IpPairVec &matches, IplImage *original)
     mapX.create(h, w, CV_32F);
     mapY.create(h, w, CV_32F);
 
+    double minx = 1000000, miny = 1000000;
+    double maxx = -1000000, maxy = -1000000;
+
     for (int i = 0; i < h; ++i)
     {
         for (int j = 0; j < w; ++j)
@@ -175,6 +178,64 @@ cv::Mat getWarppedReMap(IpPairVec &matches, IplImage *original)
 
 }
 
+// cv::Mat getInverseWarpped(IpPairVec &matches, IplImage *original)
+// {
+
+//     std::vector<cv::Point2f> pt1s;
+//     std::vector<cv::Point2f> pt2s;
+
+//     for (int i = 0; i < (int)matches.size(); i++) {
+//         pt1s.push_back(cv::Point2f(matches[i].second.x, matches[i].second.y));
+//         pt2s.push_back(cv::Point2f(matches[i].first.x, matches[i].first.y));
+//     }
+
+//     cv::Mat H = cv::findHomography(pt1s, pt2s, CV_RANSAC); // 3x3
+
+//     cv::Mat src = cv::cvarrToMat(original);
+//     int h = src.rows, w = src.cols;
+
+//     cv::Point src_corners[4] = {cv::Point(0,0), cv::Point(0, w), cv::Point(h, w), cv::Point(h, 0)};
+//     cv::Point warp_corners[4];
+
+//     double minx = 1000000, miny = 1000000;
+//     double maxx = -1000000, maxy = -1000000;
+
+//     for (int i = 0; i < 4; i++) {
+//         cv::Point pt = src_corners[i];
+//         double z = 1. / (H.at<double>(2, 0) * pt.x + H.at<double>(2, 1) * pt.y + H.at<double>(2, 2));
+//         double x = (H.at<double>(0, 0) * pt.x + H.at<double>(0, 1) * pt.y + H.at<double>(0, 2)) * z;
+//         double y = (H.at<double>(1, 0) * pt.x + H.at<double>(1, 1) * pt.y + H.at<double>(1, 2)) * z;
+//         warp_corners[i] = cv::Point(x, y);
+//         minx = std::min(minx, x);
+//         miny = std::min(miny, y);
+//         maxx = std::max(maxy, x);
+//         maxy = std::max(maxy, y);
+//     }
+
+//     if (minx < 0) H.at<double>(0, 2) = H.at<double>(0, 2) - minx;
+//     else if (miny < 0) H.at<double>(1, 2) = H.at<double>(1, 2) - miny;
+
+//     cv::Mat warp(cv::Size(h, w*2), CV_8UC3);
+
+//     for(int i = 0; i < warp.rows; ++i) {
+        
+//         for(int j = 0; j < warp.cols; ++j) {
+
+//             double z = 1. / (H.at<double>(2, 0) * j + H.at<double>(2, 1) * i + H.at<double>(2, 2));
+//             double x = (H.at<double>(0, 0) * j + H.at<double>(0, 1) * i + H.at<double>(0, 2)) * z;
+//             double y = (H.at<double>(1, 0) * j + H.at<double>(1, 1) * i + H.at<double>(1, 2)) * z;
+            
+//             if (cvRound(x) >= 0 && cvRound(x) < w && cvRound(y) >= 0 && cvRound(y) < h) {
+//                 cv::Vec3b color = src.at<cv::Vec3b>(cv::Point(cvRound(x), cvRound(y)));
+//                 warp.at<cv::Vec3b>(cv::Point(cvRound(x), cvRound(y))) = color;
+//             }
+//         }
+//     }
+
+//     return warp;
+
+//}
+
 cv::Mat getWarpped(IpPairVec &matches, IplImage *original)
 {
     std::vector<cv::Point2f> pt1s;
@@ -185,13 +246,19 @@ cv::Mat getWarpped(IpPairVec &matches, IplImage *original)
         pt2s.push_back(cv::Point2f(matches[i].first.x, matches[i].first.y));
     }
 
+
+    clock_t start, end;
+
+    start = clock();
     cv::Mat H = cv::findHomography(pt1s, pt2s, CV_RANSAC); // 3x3
+    end = clock();
+    std::cout << "findHomography took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
 
     cv::Mat src = cv::cvarrToMat(original);
     int h = src.rows, w = src.cols;
     cv::Mat warp(h, w*2, CV_8UC3);
-    //cv::Mat mask = cv::Mat::zeros(warp.size(), CV_32SC1);
 
+    #pragma omp parallel for shared(H, src, warp, h, w)
     for(int i = 0; i < h; ++i) {
         for(int j = 0; j < w; ++j) {
 
@@ -213,22 +280,101 @@ cv::Mat getWarpped(IpPairVec &matches, IplImage *original)
                         warp.at<cv::Vec3b>(cv::Point(std::ceil(x), std::ceil(y))) = color;
                             
                     }else{
-                        //mask.at<int>(cv::Point(cvRound(x), cvRound(y))) = 1;
                         warp.at<cv::Vec3b>(cv::Point(cvRound(x), cvRound(y))) = color;
                     }
                 
                 }else{
-                    //mask.at<int>(cv::Point(x, y)) = 1;
                     warp.at<cv::Vec3b>(cv::Point(x, y)) = color;
                 }
             }
         }
     }
 
-    //cv::Mat smoothed;
-    //cv::GaussianBlur(warp, smoothed, cv::Size(3,3), 0.5, 0);
-    //cv::medianBlur(warp, smoothed, 5);
-    return warp;//smoothed;
+    return warp;
+}
+
+cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original)
+{
+    std::vector<cv::Point2f> pt1s;
+    std::vector<cv::Point2f> pt2s;
+
+    for (int i = 0; i < (int)matches.size(); i++) {
+        pt1s.push_back(cv::Point2f(matches[i].second.x, matches[i].second.y));
+        pt2s.push_back(cv::Point2f(matches[i].first.x, matches[i].first.y));
+    }
+
+    cv::Mat H = cv::findHomography(pt1s, pt2s, CV_RANSAC); // 3x3
+
+    double H_[9] = {
+        H.at<double>(0, 0), H.at<double>(0, 1), H.at<double>(0, 2), 
+        H.at<double>(1, 0), H.at<double>(1, 1), H.at<double>(1, 2), 
+        H.at<double>(2, 0), H.at<double>(2, 1), H.at<double>(2, 2)};
+
+    int h = original->height, w = original->width, step = original->widthStep/sizeof(uchar);
+    int depth = original->depth, channel = original->nChannels;
+
+    uchar* src = (uchar*) original->imageData;
+    //IplImage *int_warp = cvCreateImage(h, w*2, IPL_DEPTH_32F, 3);
+    IplImage *warp = cvCreateImage(cv::Size(w*2, h), depth, channel);
+    // float *warp_data = new float[h*w*2*channel]; // height, wdith, channel
+    int warpStep = warp->widthStep/sizeof(uchar);
+    uchar* warp_data = (uchar *) warp->imageData;
+
+    #pragma acc data copyin(src, h, w,\
+         channel, step, warpStep, warp_data) \
+         copy(warp_data)
+
+    #pragma acc parallel loop
+    for(int i = 0; i < h; ++i) {
+
+        for(int j = 0; j < w; ++j) {
+
+            double z = 1. / (H_[6]* j + H_[7] * i + H_[8]);
+            double x = (H_[0] * j + H_[1] * i + H_[2]) * z;
+            double y = (H_[3] * j + H_[4] * i + H_[5]) * z;
+
+            uchar b = src[i*step+j*channel], g = src[i*step+j*channel+1], r = src[i*step+j*channel+2];
+
+            if (std::floor(x) >= 0 && std::floor(x) < w*2 && std::floor(y) >= 0 && std::floor(y) < h)
+
+                if (std::floor(x) != x || std::floor(y) != y) {
+
+                    int fx = int(std::floor(x)), cx = int(std::ceil(x));
+                    int fy = int(std::floor(y)), cy = int(std::ceil(y));
+                    
+                    if (std::floor(x) >= 0 && std::floor(y) >= 0 && std::ceil(x) < w*2 && std::ceil(y) < h ) {
+
+                        warp_data[fy*warpStep + fx*channel] = b;
+                        warp_data[fy*warpStep + fx*channel + 1] = g;
+                        warp_data[fy*warpStep + fx*channel + 2] = r;
+
+                        warp_data[fy*warpStep + cx*channel] = b;
+                        warp_data[fy*warpStep + cx*channel + 1] = g;
+                        warp_data[fy*warpStep + cx*channel + 2] = r;
+
+                        warp_data[cy*warpStep + fx*channel] = b;
+                        warp_data[cy*warpStep + fx*channel + 1] = g;
+                        warp_data[cy*warpStep + fx*channel + 2] = r;
+
+                        warp_data[cy*warpStep + cx*channel] = b;
+                        warp_data[cy*warpStep + cx*channel + 1] = g;
+                        warp_data[cy*warpStep + cx*channel + 2] = r;
+                            
+                    }else{
+                        warp_data[fy*warpStep + fx*channel] = b;
+                        warp_data[fy*warpStep + fx*channel + 1] = g;
+                        warp_data[fy*warpStep + fx*channel + 2] = r;
+                    }
+                
+                }else{
+                    warp_data[int(y)*warpStep + int(x)*channel] = b;
+                    warp_data[int(y)*warpStep + int(x)*channel + 1] = g;
+                    warp_data[int(y)*warpStep + int(x)*channel + 2] = r;
+                }
+        }
+    }
+
+    return cv::cvarrToMat(warp);
 }
 
 //
