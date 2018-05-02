@@ -78,8 +78,8 @@ int mainVideo(void)
 int mainStaticMatch()
 {
     IplImage *img1, *img2;
-    img1 = cvLoadImage("../../sequential/img1x.jpg");
-    img2 = cvLoadImage("../../sequential/img2x.jpg");
+    img1 = cvLoadImage("../../sequential/img1y.jpg");
+    img2 = cvLoadImage("../../sequential/img2y.jpg");
 
     cv::Mat m = cv::cvarrToMat(img1);
 
@@ -120,13 +120,16 @@ int mainStaticMatch()
     cv::Mat stitched = getCvStitch(img1, warpped);
     end = clock();
     std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-    // cv::namedWindow("stitched", CV_WINDOW_AUTOSIZE );
-    // cv::namedWindow("1", CV_WINDOW_AUTOSIZE );
-    // cv::namedWindow("2", CV_WINDOW_AUTOSIZE );
-    // cvShowImage("1", img1);
-    // cv::imshow("2", warpped);
-    // cv::imshow("stitched", stitched);
-    // cvWaitKey(0);
+
+    cv::namedWindow("stitched", CV_WINDOW_AUTOSIZE );
+    cv::namedWindow("1", CV_WINDOW_AUTOSIZE );
+    cv::namedWindow("2", CV_WINDOW_AUTOSIZE );
+    cv::namedWindow("3", CV_WINDOW_AUTOSIZE );
+    cvShowImage("1", img1);
+    cvShowImage("2", img2);
+    cv::imshow("3", warpped);
+    cv::imshow("stitched", stitched);
+    cvWaitKey(0);
 
     return 0;
 }
