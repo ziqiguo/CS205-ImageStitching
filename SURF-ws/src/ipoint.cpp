@@ -293,7 +293,102 @@ cv::Mat getWarpped(IpPairVec &matches, IplImage *original)
     return warp;
 }
 
-cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original)
+// cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original)
+// {
+//     std::vector<cv::Point2f> pt1s;
+//     std::vector<cv::Point2f> pt2s;
+
+//     for (int i = 0; i < (int)matches.size(); i++) {
+//         pt1s.push_back(cv::Point2f(matches[i].second.x, matches[i].second.y));
+//         pt2s.push_back(cv::Point2f(matches[i].first.x, matches[i].first.y));
+//     }
+
+//     cv::Mat H = cv::findHomography(pt1s, pt2s, CV_RANSAC); // 3x3
+
+//     double H_[9] = {
+//         H.at<double>(0, 0), H.at<double>(0, 1), H.at<double>(0, 2), 
+//         H.at<double>(1, 0), H.at<double>(1, 1), H.at<double>(1, 2), 
+//         H.at<double>(2, 0), H.at<double>(2, 1), H.at<double>(2, 2)};
+
+//     int h = original->height, w = original->width, step = original->widthStep/sizeof(uchar);
+//     int depth = original->depth, channel = original->nChannels;
+
+//     uchar* src = (uchar*) original->imageData;
+
+//     int warpStep =  2 * step;
+//     uchar* warp_data = new uchar[h*w*2*channel];
+//     //memset(warp_data, 0, h*w*2*channel);
+
+
+//     #pragma acc data copyin(src, h, w,\
+//          channel, step, warpStep, warp_data) \
+//          copy(warp_data)
+
+//     #pragma acc parallel loop
+//     for(int i = 0; i < h; ++i) {
+
+//         for(int j = 0; j < w; ++j) {
+
+//             double z = 1. / (H_[6]* j + H_[7] * i + H_[8]);
+//             double x = (H_[0] * j + H_[1] * i + H_[2]) * z;
+//             double y = (H_[3] * j + H_[4] * i + H_[5]) * z;
+
+//             uchar b = src[i*step+j*channel], g = src[i*step+j*channel+1], r = src[i*step+j*channel+2];
+
+//             if (std::floor(x) >= 0 && std::floor(x) < w*2 && std::floor(y) >= 0 && std::floor(y) < h)
+
+//                 if (std::floor(x) != x || std::floor(y) != y) {
+
+//                     int fx = int(std::floor(x)), cx = int(std::ceil(x));
+//                     int fy = int(std::floor(y)), cy = int(std::ceil(y));
+                    
+//                     if (std::floor(x) >= 0 && std::floor(y) >= 0 && std::ceil(x) < w*2 && std::ceil(y) < h ) {
+
+//                         warp_data[fy*warpStep + fx*channel] = b;
+//                         warp_data[fy*warpStep + fx*channel + 1] = g;
+//                         warp_data[fy*warpStep + fx*channel + 2] = r;
+
+//                         warp_data[fy*warpStep + cx*channel] = b;
+//                         warp_data[fy*warpStep + cx*channel + 1] = g;
+//                         warp_data[fy*warpStep + cx*channel + 2] = r;
+
+//                         warp_data[cy*warpStep + fx*channel] = b;
+//                         warp_data[cy*warpStep + fx*channel + 1] = g;
+//                         warp_data[cy*warpStep + fx*channel + 2] = r;
+
+//                         warp_data[cy*warpStep + cx*channel] = b;
+//                         warp_data[cy*warpStep + cx*channel + 1] = g;
+//                         warp_data[cy*warpStep + cx*channel + 2] = r;
+                            
+//                     }else{
+//                         warp_data[fy*warpStep + fx*channel] = b;
+//                         warp_data[fy*warpStep + fx*channel + 1] = g;
+//                         warp_data[fy*warpStep + fx*channel + 2] = r;
+//                     }
+                
+//                 }else{
+//                     warp_data[int(y)*warpStep + int(x)*channel] = b;
+//                     warp_data[int(y)*warpStep + int(x)*channel + 1] = g;
+//                     warp_data[int(y)*warpStep + int(x)*channel + 2] = r;
+//                 }
+//         }
+//     }
+
+//     cv::Mat warp(h, w*2, CV_8UC3, cvScalar(0, 0, 0));
+//     cv::Mat mask(h, w*2, CV_8UC3, cvScalar(0, 0, 0))
+
+//     for (int i = 0; i < h; i++) {
+//         for (int j = 0; j < w*2; j++) {
+//             warp.at<cv::Vec3b>(cv::Point(j, i)) = cv::Vec3b(warp_data[i*warpStep+j*channel], \
+//                 warp_data[i*warpStep+j*channel + 1], warp_data[i*warpStep+j*channel + 2]);
+//             mask.at<cv::Vec3b>(cv::Point(j, i)) = cv::Vec3b(0, 0, 0);
+//         }
+//     }
+
+//     return make_pair<cv::Mat, cv::Mat>(warp, mask);
+// }
+
+std::pair<cv::Mat, cv::Mat> getWarppedAcc(IpPairVec &matches, IplImage *original)
 {
     std::vector<cv::Point2f> pt1s;
     std::vector<cv::Point2f> pt2s;
@@ -316,9 +411,11 @@ cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original)
     uchar* src = (uchar*) original->imageData;
 
     int warpStep =  2 * step;
-    uchar* warp_data = new uchar[h*w*2*channel];
-    //memset(warp_data, 0, h*w*2*channel);
+    int maskStep = w*2;
 
+    uchar* warp_data = new uchar[h*w*2*channel];
+    uchar* mask_data = new uchar[h*w*2];
+    //memset(warp_data, 0, h*w*2*channel);
 
     #pragma acc data copyin(src, h, w,\
          channel, step, warpStep, warp_data) \
@@ -359,31 +456,42 @@ cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original)
                         warp_data[cy*warpStep + cx*channel] = b;
                         warp_data[cy*warpStep + cx*channel + 1] = g;
                         warp_data[cy*warpStep + cx*channel + 2] = r;
+
+                        mask_data[fy*maskStep + fx] = 255;
+                        mask_data[fy*maskStep + cx] = 255;
+                        mask_data[cy*maskStep + fx] = 255;
+                        mask_data[cy*maskStep + cx] = 255;
                             
                     }else{
                         warp_data[fy*warpStep + fx*channel] = b;
                         warp_data[fy*warpStep + fx*channel + 1] = g;
                         warp_data[fy*warpStep + fx*channel + 2] = r;
+
+                        mask_data[fy*maskStep + fx] = 255;
                     }
                 
                 }else{
                     warp_data[int(y)*warpStep + int(x)*channel] = b;
                     warp_data[int(y)*warpStep + int(x)*channel + 1] = g;
                     warp_data[int(y)*warpStep + int(x)*channel + 2] = r;
+
+                    mask_data[int(y)*maskStep + int(x)] = 255;
                 }
         }
     }
 
     cv::Mat warp(h, w*2, CV_8UC3, cvScalar(0, 0, 0));
+    cv::Mat mask = cv::Mat::zeros(h, w*2, CV_8UC1);
 
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w*2; j++) {
             warp.at<cv::Vec3b>(cv::Point(j, i)) = cv::Vec3b(warp_data[i*warpStep+j*channel], \
                 warp_data[i*warpStep+j*channel + 1], warp_data[i*warpStep+j*channel + 2]);
+            mask.at<uchar>(cv::Point(j, i)) = mask_data[i*maskStep+j];
         }
     }
-
-    return warp;
+    
+    return std::make_pair<cv::Mat, cv::Mat>(warp, mask);
 }
 
 //

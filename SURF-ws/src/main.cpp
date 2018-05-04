@@ -110,11 +110,12 @@ int mainStaticMatch()
     // cv::Mat warpped = getWarppedReMap(matches, img2);
 
     start = clock();
-    cv::Mat warpped = getWarppedAcc(matches, img2);
+    // cv::Mat warpped = getWarppedAcc(matches, img2);
+    std::pair<cv::Mat, cv::Mat> warpnmask = getWarppedAcc(matches, img2);
     end = clock();
     std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
     start = clock();
-    cv::Mat stitched = getCvStitch(img1, warpped);
+    cv::Mat stitched = getCvStitch(img1, warpnmask.first);
     end = clock();
     std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
 
@@ -124,7 +125,7 @@ int mainStaticMatch()
     cv::namedWindow("3", CV_WINDOW_AUTOSIZE );
     cvShowImage("1", img1);
     cvShowImage("2", img2);
-    cv::imshow("3", warpped);
+    cv::imshow("3", warpnmask.second);
     cv::imshow("stitched", stitched);
     cvWaitKey(0);
 
