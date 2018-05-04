@@ -78,6 +78,7 @@ int mainVideo(void)
 int mainStaticMatch()
 {
     IplImage *img1, *img2;
+    
     img1 = cvLoadImage("../../sequential/img1y.jpg");
     img2 = cvLoadImage("../../sequential/img2y.jpg");
 

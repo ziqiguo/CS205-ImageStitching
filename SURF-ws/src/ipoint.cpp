@@ -314,11 +314,11 @@ cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original)
     int depth = original->depth, channel = original->nChannels;
 
     uchar* src = (uchar*) original->imageData;
-    //IplImage *int_warp = cvCreateImage(h, w*2, IPL_DEPTH_32F, 3);
-    IplImage *warp = cvCreateImage(cv::Size(w*2, h), depth, channel);
-    // float *warp_data = new float[h*w*2*channel]; // height, wdith, channel
-    int warpStep = warp->widthStep/sizeof(uchar);
-    uchar* warp_data = (uchar *) warp->imageData;
+
+    int warpStep =  2 * step;
+    uchar* warp_data = new uchar[h*w*2*channel];
+    //memset(warp_data, 0, h*w*2*channel);
+
 
     #pragma acc data copyin(src, h, w,\
          channel, step, warpStep, warp_data) \
@@ -374,7 +374,16 @@ cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original)
         }
     }
 
-    return cv::cvarrToMat(warp);
+    cv::Mat warp(h, w*2, CV_8UC3, cvScalar(0, 0, 0));
+
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w*2; j++) {
+            warp.at<cv::Vec3b>(cv::Point(j, i)) = cv::Vec3b(warp_data[i*warpStep+j*channel], \
+                warp_data[i*warpStep+j*channel + 1], warp_data[i*warpStep+j*channel + 2]);
+        }
+    }
+
+    return warp;
 }
 
 //
