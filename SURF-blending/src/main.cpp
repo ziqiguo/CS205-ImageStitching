@@ -98,8 +98,8 @@ int mainVideo(void)
 
 int mainStaticMatch()
 {
-    IplImage *img1 = cvLoadImage("../../sequential/img1.jpg");
-    IplImage *img2 = cvLoadImage("../../sequential/img2.jpg");
+    IplImage *img1 = cvLoadImage("../../sequential/img1y.jpg");
+    IplImage *img2 = cvLoadImage("../../sequential/img2y.jpg");
 
     IpVec ipts1, ipts2;
 
@@ -115,48 +115,33 @@ int mainStaticMatch()
     clock_t end = clock();
     std::cout << "OpenSURF took: " << float(end - start) / CLOCKS_PER_SEC << " seconds to get matches." << std::endl;
 
-    // start = clock();
-    // cv::Mat warpped = getCvWarpped(matches, img2);
+    start = clock();
+    // cv::Mat warpped = getWarpped(matches, img2);
     // end = clock();
-    // std::cout<< "compute H, warpping took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
+    // std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
     // start = clock();
     // cv::Mat stitched = getCvStitch(img1, warpped);
     // end = clock();
-    // std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
-    // cv::Mat warpped = getWarppedReMap(matches, img2);
-
-    // cv::Mat H = getHomography(matches, img2);
-    // makePanorama(img1, img2, H, std::vector<std::vector<Point>> corners);
-
-
-
-    start = clock();
-    cv::Mat warpped = getWarpped(matches, img2);
-    end = clock();
-    std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-    start = clock();
-    cv::Mat stitched = getCvStitch(img1, warpped);
-    end = clock();
-    std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+    // std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
  
     
-    //cv::namedWindow("stitched", CV_WINDOW_AUTOSIZE );
-    //cv::namedWindow("1", CV_WINDOW_AUTOSIZE );
-    //cv::namedWindow("2", CV_WINDOW_AUTOSIZE );
-    cvShowImage("1", img1);
-    cvShowImage("2", img2);
-    //cv::imshow("warp", warpped);  
-    //cv::imshow("mask", mask2);
-    cv::imshow("stitched", stitched);
-    cvWaitKey(0);
+    // //cv::namedWindow("stitched", CV_WINDOW_AUTOSIZE );
+    // //cv::namedWindow("1", CV_WINDOW_AUTOSIZE );
+    // //cv::namedWindow("2", CV_WINDOW_AUTOSIZE );
+    // //cvShowImage("1", img1);
+    // //cvShowImage("2", img2);
+    // //cv::imshow("warp", warpped);  
+    // //cv::imshow("mask", mask2);
+    // cv::imshow("stitched", stitched);
+    // cvWaitKey(0);
 
     return 0;
 }
 
 int mainBlending()
 {
-    IplImage *img1 = cvLoadImage("../../sequential/img1.jpg");
-    IplImage *img2 = cvLoadImage("../../sequential/img2.jpg");
+    IplImage *img1 = cvLoadImage("../../sequential/img1y.jpg");
+    IplImage *img2 = cvLoadImage("../../sequential/img2y.jpg");
 
     IpVec ipts1, ipts2;
     surfDetDes(img1,ipts1,false,4,4,2,0.0001f);
@@ -166,8 +151,24 @@ int mainBlending()
     getMatches(ipts1, ipts2, matches);
     clock_t end = clock();
     std::cout << "OpenSURF took: " << float(end - start) / CLOCKS_PER_SEC << " seconds to get matches." << std::endl;
-    cv::Mat result_s = getBlended(img1, img2, matches);
+
+    // warping
+    start = clock();
+    std::pair<cv::Mat, cv::Mat> warp_mask = getWarppedAcc(matches, img2);
+    cv::Mat mask2 = warp_mask.second;
+    cv::Mat warpped = warp_mask.first;
+    end = clock();
+    std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+
+    //blending
+    start = clock();
+    cv::Mat result_s = getBlended(img1, img2, matches, warpped, mask2);
+    end = clock();
+    std::cout<< "blending took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
     cv::imshow("blended", result_s);
+    cv::imshow("mask", mask2);
+    cv::imshow("warpped", warpped);
+    //cv::imshow("stiched", stitched);
     cvWaitKey(0);
 
     return 0;
