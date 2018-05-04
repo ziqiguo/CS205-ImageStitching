@@ -10,7 +10,8 @@
 #include "surf.h"
 #include "ipoint.h"
 #include "utils.h"
-
+#include <ctime>
+#include <iostream>
 
 //! Library function builds vector of described interest points
 inline void surfDetDes(IplImage *img,    /* image to find Ipoints in */
@@ -28,14 +29,19 @@ inline void surfDetDes(IplImage *img,    /* image to find Ipoints in */
     FastHessian fh(int_img, ipts, octaves, intervals, init_sample, thres);
  
     // Extract interest points and store in vector ipts
+    clock_t start = clock();
     fh.getIpoints();
+    clock_t end = clock();
+    std::cout<< "get Ipts took: " << float(end - start) / CLOCKS_PER_SEC    << " seconds" << std::endl;
     
     // Create Surf Descriptor Object
     Surf des(int_img, ipts);
 
     // Extract the descriptors for the ipts
+    start = clock();
     des.getDescriptors(upright);
-
+    end = clock();
+    std::cout<< "extract features took: " << float(end - start) / CLOCKS_PER_SEC    << " seconds" << std::endl;
     // Deallocate the integral image
     cvReleaseImage(&int_img);
 }
