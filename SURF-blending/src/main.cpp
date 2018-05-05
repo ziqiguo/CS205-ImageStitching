@@ -2,6 +2,28 @@
 // #include "kmeans.h"
 #include <ctime>
 #include <iostream>
+#include "opencv2/highgui/highgui.hpp"
+//https://gist.github.com/yoggy/3246274
+
+/*
+    Usage: 1 -> regular stitching 2 images
+           3 -> use blender to stitch
+
+    get Ipts took: 3.54182 seconds
+    extract features took: 1.30219 seconds
+    get Ipts took: 3.55647 seconds
+    extract features took: 1.46639 seconds
+    OpenSURF took: 3.03159 seconds to get matches.
+    
+
+    (warpping took: 1.28497
+    stitching took: 0.057989)
+
+    find homography took: 0.003098 seconds.
+    warpping took: 0.389348
+    creating mask took: 0.262575
+    blending took: 0.66731
+*/
 
 
 int mainImage(void)
@@ -76,33 +98,77 @@ int mainVideo(void)
 
 int mainStaticMatch()
 {
-    IplImage *img1, *img2;
-    img1 = cvLoadImage("../imgs/img1.jpg");
-    img2 = cvLoadImage("../imgs/img2.jpg");
+    IplImage *img1 = cvLoadImage("../../sequential/img1y.jpg");
+    IplImage *img2 = cvLoadImage("../../sequential/img2y.jpg");
+
+    IpVec ipts1, ipts2;
+
+    //clock_t start = clock();
+    surfDetDes(img1,ipts1,false,4,4,2,0.0001f);
+    surfDetDes(img2,ipts2,false,4,4,2,0.0001f);
+    //clock_t end = clock();
+    //std::cout<< "OpenSURF took: " << float(end - start) / CLOCKS_PER_SEC    << " seconds to find Ipts and their FDes." << std::endl;
+    IpPairVec matches;
+    clock_t start = clock();
+    //getMatchesKDTree(ipts1, ipts2, matches);
+    getMatches(ipts1, ipts2, matches);
+    clock_t end = clock();
+    std::cout << "OpenSURF took: " << float(end - start) / CLOCKS_PER_SEC << " seconds to get matches." << std::endl;
+
+    start = clock();
+    // cv::Mat warpped = getWarpped(matches, img2);
+    // end = clock();
+    // std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+    // start = clock();
+    // cv::Mat stitched = getCvStitch(img1, warpped);
+    // end = clock();
+    // std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+ 
+    
+    // //cv::namedWindow("stitched", CV_WINDOW_AUTOSIZE );
+    // //cv::namedWindow("1", CV_WINDOW_AUTOSIZE );
+    // //cv::namedWindow("2", CV_WINDOW_AUTOSIZE );
+    // //cvShowImage("1", img1);
+    // //cvShowImage("2", img2);
+    // //cv::imshow("warp", warpped);  
+    // //cv::imshow("mask", mask2);
+    // cv::imshow("stitched", stitched);
+    // cvWaitKey(0);
+
+    return 0;
+}
+
+int mainBlending()
+{
+    IplImage *img1 = cvLoadImage("../../sequential/img1y.jpg");
+    IplImage *img2 = cvLoadImage("../../sequential/img2y.jpg");
 
     IpVec ipts1, ipts2;
     surfDetDes(img1,ipts1,false,4,4,2,0.0001f);
     surfDetDes(img2,ipts2,false,4,4,2,0.0001f);
-
     IpPairVec matches;
-    getMatches(ipts1,ipts2,matches);
+    clock_t start = clock();
+    getMatches(ipts1, ipts2, matches);
+    clock_t end = clock();
+    std::cout << "OpenSURF took: " << float(end - start) / CLOCKS_PER_SEC << " seconds to get matches." << std::endl;
 
-    for (unsigned int i = 0; i < matches.size(); ++i)
-    {
-        drawPoint(img1,matches[i].first);
-        drawPoint(img2,matches[i].second);
-    
-        const int & w = img1->width;
-        cvLine(img1,cvPoint(matches[i].first.x,matches[i].first.y),cvPoint(matches[i].second.x+w,matches[i].second.y), cvScalar(255,255,255),1);
-        cvLine(img2,cvPoint(matches[i].first.x-w,matches[i].first.y),cvPoint(matches[i].second.x,matches[i].second.y), cvScalar(255,255,255),1);
-    }
+    // warping
+    start = clock();
+    std::pair<cv::Mat, cv::Mat> warp_mask = getWarppedAcc(matches, img2);
+    cv::Mat mask2 = warp_mask.second;
+    cv::Mat warpped = warp_mask.first;
+    end = clock();
+    std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
 
-    std::cout<< "Matches: " << matches.size();
-
-    cvNamedWindow("1", CV_WINDOW_AUTOSIZE );
-    cvNamedWindow("2", CV_WINDOW_AUTOSIZE );
-    cvShowImage("1", img1);
-    cvShowImage("2",img2);
+    //blending
+    start = clock();
+    cv::Mat result_s = getBlended(img1, img2, matches, warpped, mask2);
+    end = clock();
+    std::cout<< "blending took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+    cv::imshow("blended", result_s);
+    cv::imshow("mask", mask2);
+    cv::imshow("warpped", warpped);
+    //cv::imshow("stiched", stitched);
     cvWaitKey(0);
 
     return 0;
@@ -152,5 +218,9 @@ int main(int argc, char* argv[])
     // SURF on webcam
     if(atoi(argv[1]) == 2)
         return mainVideo();
+
+    // SURF with blending
+    if(atoi(argv[1]) == 3)
+        return mainBlending();
 
 }

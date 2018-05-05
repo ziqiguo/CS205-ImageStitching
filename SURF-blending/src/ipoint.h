@@ -3,6 +3,10 @@
 
 #include <vector>
 #include <math.h>
+#include "opencv2/stitching/detail/blenders.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+
 
 //-------------------------------------------------------
 
@@ -16,11 +20,14 @@ typedef std::vector<std::pair<Ipoint, Ipoint> > IpPairVec;
 void getMatches(IpVec &ipts1, IpVec &ipts2, IpPairVec &matches);
 // void getMatchesKDTree(IpVec &ipts1, IpVec &ipts2, IpPairVec &matches);
 cv::Mat getCvWarpped(IpPairVec &matches, IplImage *original);
+
 cv::Mat getCvStitch(IplImage *src, cv::Mat warpped);
-cv::Mat getWarpped(IpPairVec &matches, IplImage *original);
-cv::Mat getWarppedReMap(IpPairVec &matches, IplImage *original);
-// cv::Mat getWarppedAcc(IpPairVec &matches, IplImage *original);
+std::pair<cv::Mat, cv::Mat> getWarpped(IpPairVec &matches, IplImage *original);
 std::pair<cv::Mat, cv::Mat> getWarppedAcc(IpPairVec &matches, IplImage *original);
+//cv::Mat getWarppedReMap(IpPairVec &matches, IplImage *original);
+cv::Mat getHomography(IpPairVec &matches, IplImage *original);
+cv::Mat getBlended(IplImage *img1, IplImage *img2, IpPairVec &matches, cv::Mat &warpped, cv::Mat &mask2);
+// cv::Point2f translateCorner(cv::Mat H, const cv::Point src_corners);
 //-------------------------------------------------------
 
 class Ipoint {
