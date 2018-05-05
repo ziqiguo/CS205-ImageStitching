@@ -47,56 +47,18 @@ void captureThread(CvCapture* capture_0, CvCapture* capture_1, IplImage** img_0,
     }
 }
 
-void stitchingThread(IpVec *ipts_0, IpVec *ipts_1, IplImage** img_0_ptr, IplImage** img_1_ptr, cv::Mat* stitched)
-{   
-    while(!THREAD_EXIT_FLAG)
-    {
-        if((*ipts_0).size() == 0 || (*ipts_1).size() == 0)
-            continue;
-        try
-        {
-            IpPairVec matches;
-            clock_t start, end;
 
-            start = clock();
-            getMatches(*ipts_0, *ipts_1, matches);
-            end = clock();
-            std::cout<< "Matching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-
-            start = clock();
-            // cv::Mat warpped = getWarppedAcc(matches, *img_1_ptr);
-            cv::Mat warpped = getCvWarpped(matches, *img_1_ptr);
-            end = clock();
-            std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-
-            start = clock();
-            *stitched = getCvStitch(*img_0_ptr, warpped);
-            end = clock();
-            std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-
-            start = clock();
-            IplImage* display = cvCloneImage(&(IplImage)*stitched);
-            drawFPS(display);
-            cvShowImage("stitched", display);
-            end = clock();
-            std::cout<< "Imshow took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;            
-            std::cout << "----------------------------------------------" << endl;
-        }
-        catch(cv::Exception& e)
-        {
-            continue;
-        }
-    }
-}
-
-void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, IplImage **img_1, cv::Mat **stitched_cpy)
+void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, IplImage **img_1,
+                     cv::Mat **stitched_cpy, int video_mode=0)
 {
     IpVec ipts_0, ipts_0_cpy;
     IpVec ipts_1, ipts_1_cpy;
-    IplImage *img_0_ptr, *img_1_ptr;
+    IplImage *img_0_ptr, *img_1_ptr, *desc_0, *desc_1;
     cv::Mat H, stitched, H_mean;
     IpPairVec matches;
     clock_t start, end;
+
+    CvSize sz;
 
     int H_count=0;
 
@@ -108,6 +70,20 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
         // Get pointer to point to the current image captured by the capture thread
         img_0_ptr = *img_0;
         img_1_ptr = *img_1;
+
+        // resize video stream
+        if(video_mode)
+        {
+            sz.width = img_0_ptr->width*2/3;  
+            sz.height = img_0_ptr->height*2/3;  
+            desc_0 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);
+            desc_1 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);  
+            cvResize(img_0_ptr, desc_0, CV_INTER_CUBIC);
+            cvResize(img_1_ptr, desc_1, CV_INTER_CUBIC);
+            img_0_ptr = desc_0;
+            img_1_ptr = desc_1;
+        }
+
         H_count++;
 
         try{
@@ -128,12 +104,18 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
             start = clock();
             H = findHom(matches);
             // }
-
-            if(H_count == 1)
+            if(video_mode)
+            {
                 H_mean = H;
+            }
             else
             {
-                H_mean = 0.9*H_mean + 0.1*H;
+                if(H_count == 1)
+                    H_mean = H;
+                else
+                {
+                    H_mean = 0.9*H_mean + 0.1*H;
+                }   
             }
 
             cv::Mat warpped, mask2;
@@ -175,32 +157,8 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
     }
 }
 
-void videoThread(cv::Mat** stitched_cpy)
-{   
-    clock_t start, end;
-    sleep(5);
-    while(!THREAD_EXIT_FLAG)
-    {
-        try{
-            start = clock();
-            // IplImage* display = cvCloneImage(&(IplImage)(*stitched_cpy));
-            // drawFPS(display);
-            // cvShowImage("stitched", display);
-            img_lock.lock();
-            cv::imshow("stitched", **stitched_cpy);
-            img_lock.unlock();
-            end = clock();
-            std::cout<< "Imshow took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;            
-            std::cout << "----------------------------------------------" << endl;
-        }
-        catch(cv::Exception& e)
-        {
-            continue;
-        }
-    }
-}
 
-int mainVideo(int single_mem_cpy, int blend_mode)
+int mainStream(int single_mem_cpy, int blend_mode)
 {
     // Initialise capture device
     // CvCapture* capture = cvCaptureFromCAM( CV_CAP_ANY );
@@ -224,7 +182,7 @@ int mainVideo(int single_mem_cpy, int blend_mode)
     // Create a window 
     // cvNamedWindow("Camera0", CV_WINDOW_AUTOSIZE );
     // cvNamedWindow("Camera1", CV_WINDOW_AUTOSIZE );
-    cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE );
+    cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE);
 
     // Declare Ipoints and other stuff
     IpVec ipts_0, ipts_0_cpy;
@@ -239,64 +197,16 @@ int mainVideo(int single_mem_cpy, int blend_mode)
     int H_count=0;
 
     std::thread t1(captureThread, capture_0, capture_1, &img_0, &img_1);
-    // std::thread t2(stitchingThread, &ipts_0_cpy, &ipts_1_cpy, &img_0_ptr, &img_1_ptr, &stitched);
-    // std::thread t3(videoThread, &stitched_cpy);
 
-    sleep(1);
-    std::thread t3(featureStitchThread, single_mem_cpy, blend_mode, &img_0, &img_1, &stitched_cpy);
+    std::thread t3(featureStitchThread, single_mem_cpy, blend_mode, &img_0, &img_1, &stitched_cpy, 0);
 
-    sleep(2);
     // Main capture loop
     while(1) 
     {
-        if(img_0 == NULL or img_1 == NULL)
+        if(stitched_cpy == NULL)
             continue;
-        
-        // Get pointer to point to the current image captured by the capture thread
-        img_0_ptr = img_0;
-        img_1_ptr = img_1;
-        H_count++;
 
         try{
-            // if(H_count % 10 == 1)
-            // {
-            //     surfDetDes(img_0_ptr, ipts_0, single_mem_cpy, true, 4, 4, 2, 0.002f);        
-            //     surfDetDes(img_1_ptr, ipts_1, single_mem_cpy, true, 4, 4, 2, 0.002f);        
-
-            //     ipts_0_cpy = ipts_0;
-            //     ipts_1_cpy = ipts_1;
-            //     cout << ipts_0_cpy.size() << ", " << ipts_1_cpy.size() << endl;
-
-            //     start = clock();
-            //     getMatches(ipts_0, ipts_1, matches);
-            //     end = clock();
-            //     std::cout<< "Matching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-
-            //     start = clock();
-            //     H = findHom(matches);
-            // // }
-
-            // if(H_count == 1)
-            //     H_mean = H;
-            // else
-            // {
-            //     H_mean = 0.9*H_mean + 0.1*H;
-            // }
-
-            
-            // cv::Mat warpped = getWarppedAcc(img_1, H_mean);
-            // // cv::Mat warpped = getWarpped(matches, img_1);
-            // end = clock();
-            // std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-
-            // start = clock();
-            // stitched = getCvStitch(img_0, warpped);
-            // img_lock.lock();
-            // stitched_cpy = new cv::Mat(stitched);
-            // img_lock.unlock();
-            // end = clock();
-            // std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-            
             start = clock();
             img_lock.lock();
             IplImage* display = cvCloneImage(&(IplImage)(*stitched_cpy));
@@ -327,7 +237,7 @@ int mainVideo(int single_mem_cpy, int blend_mode)
 }
 
 
-int mainStaticMatch(int single_mem_cpy, int blend_mode)
+int mainStichTest(int single_mem_cpy, int blend_mode)
 {
     IplImage *img_0, *img_1;
     cv::Mat warpped, stitched, mask2;
@@ -374,28 +284,76 @@ int mainStaticMatch(int single_mem_cpy, int blend_mode)
     
     cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE );
     cv::imshow("stitched", stitched);
-
-    // for (unsigned int i = 0; i < matches.size(); ++i)
-    // {
-    //     drawPoint(img1,matches[i].first);
-    //     drawPoint(img2,matches[i].second);
-    
-    //     const int & w = img1->width;
-    //     cvLine(img1,cvPoint(matches[i].first.x,matches[i].first.y),cvPoint(matches[i].second.x+w,matches[i].second.y), cvScalar(255,255,255),1);
-    //     cvLine(img2,cvPoint(matches[i].first.x-w,matches[i].first.y),cvPoint(matches[i].second.x,matches[i].second.y), cvScalar(255,255,255),1);
-    // }
-
-    // std::cout<< "Matches: " << matches.size();
-
-    // cvNamedWindow("1", CV_WINDOW_AUTOSIZE );
-    // cvNamedWindow("2", CV_WINDOW_AUTOSIZE );
-    // cvShowImage("1", img1);
-    // cvShowImage("2",img2);
     cvWaitKey(0);
 
     return 0;
 }
 
+
+int mainVideo(int single_mem_cpy, int blend_mode)
+{
+    CvCapture* capture_0, *capture_1;
+    capture_0 = cvCaptureFromAVI("../videos/video_left.mov");
+    capture_1 = cvCaptureFromAVI("../videos/video_right.mov");
+
+    // cvSetCaptureProperty(capture_0, CV_CAP_PROP_FRAME_HEIGHT, 720);
+    // cvSetCaptureProperty(capture_0, CV_CAP_PROP_FRAME_WIDTH, 1280);
+    // cvSetCaptureProperty(capture_1, CV_CAP_PROP_FRAME_HEIGHT, 720);
+    // cvSetCaptureProperty(capture_1, CV_CAP_PROP_FRAME_WIDTH, 1280);
+    
+    if(!capture_0 || !capture_1)
+        throw "Error when reading videos";
+
+    IpVec ipts_0, ipts_0_cpy;
+    IpVec ipts_1, ipts_1_cpy;
+    IplImage *img_0 = NULL;
+    IplImage *img_1 = NULL;
+    IplImage *img_0_ptr, *img_1_ptr;
+    cv::Mat H, stitched, H_mean, *stitched_cpy=NULL;
+    IpPairVec matches;
+    clock_t start, end;
+
+    int H_count=0;
+
+    std::thread t1(captureThread, capture_0, capture_1, &img_0, &img_1);
+
+    // sleep(1);
+    std::thread t3(featureStitchThread, single_mem_cpy, blend_mode, &img_0, &img_1, &stitched_cpy, 1);
+
+    cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE);
+
+    while(1) 
+    {
+        if(stitched_cpy == NULL)
+            continue;
+        try{
+            start = clock();
+            img_lock.lock();
+            IplImage* display = cvCloneImage(&(IplImage)(*stitched_cpy));
+            drawFPS(display);
+            cvShowImage("stitched", display);
+            cvReleaseImage(&display);
+            // cv::imshow("stitched", *stitched_cpy);
+            img_lock.unlock();
+            end = clock();
+            std::cout<< "Imshow took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;            
+            std::cout << "----------------------------------------------" << endl;
+        }
+        catch(cv::Exception& e)
+        {
+            continue;
+        }
+
+        // If ESC key pressed exit loop
+        if( (cvWaitKey(10) & 255) == 27 ) break;
+    }
+
+    THREAD_EXIT_FLAG = true;
+    cvReleaseCapture(&capture_0);
+    cvReleaseCapture(&capture_1);
+    cvDestroyWindow("stitched");
+    return 0;
+}
 
 //-------------------------------------------------------
 
@@ -407,10 +365,13 @@ int main(int argc, char* argv[])
 
     // show match between SURF
     if(atoi(argv[1]) == 1)
-        return mainStaticMatch(atoi(argv[2]), atoi(argv[3]));
+        return mainStichTest(atoi(argv[2]), atoi(argv[3]));
 
     // SURF on webcam
     if(atoi(argv[1]) == 2)
+        return mainStream(atoi(argv[2]), atoi(argv[3]));
+
+    if(atoi(argv[1]) == 3)
         return mainVideo(atoi(argv[2]), atoi(argv[3]));
 
 }
