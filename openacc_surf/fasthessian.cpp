@@ -313,8 +313,8 @@ void FastHessian::buildResponseMap()
             curr_size += rl->width*rl->height;
         }
 
-        delete responses_arr;
-        delete laplacian_arr;
+        delete[] responses_arr;
+        delete[] laplacian_arr;
     }
 
     // -------------------multiple memory copy-------------------
@@ -386,7 +386,6 @@ void FastHessian::buildResponseLayer(ResponseLayer *rl)
 
     }
 
-    cout << responses[1] << endl;
 }
     
 //-------------------------------------------------------
