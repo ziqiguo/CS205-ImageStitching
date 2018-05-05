@@ -13,6 +13,8 @@
 
 #include <ctime>
 
+using namespace std;
+
 //! Library function builds vector of described interest points
 inline void surfDetDes(IplImage *img,    /* image to find Ipoints in */
                                              std::vector<Ipoint> &ipts, /* reference to vector of Ipoints */

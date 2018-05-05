@@ -6,7 +6,7 @@
 //! SURF priors (these need not be done at runtime)
 const float pi = 3.14159f;
 
-const double gauss25 [7][7] = {
+const float gauss25 [7][7] = {
     0.02350693969273,0.01849121369071,0.01239503121241,0.00708015417522,0.00344628101733,0.00142945847484,0.00050524879060,
     0.02169964028389,0.01706954162243,0.01144205592615,0.00653580605408,0.00318131834134,0.00131955648461,0.00046640341759,
     0.01706954162243,0.01342737701584,0.00900063997939,0.00514124713667,0.00250251364222,0.00103799989504,0.00036688592278,
@@ -16,7 +16,7 @@ const double gauss25 [7][7] = {
     0.00131955648461,0.00103799989504,0.00069579213743,0.00039744277546,0.00019345616757,0.00008024231247,0.00002836202103
 };
 
-const double gauss33 [11][11] = {
+const float gauss33 [11][11] = {
     0.014614763,0.013958917,0.012162744,0.00966788,0.00701053,0.004637568,0.002798657,0.001540738,0.000773799,0.000354525,0.000148179,
     0.013958917,0.013332502,0.011616933,0.009234028,0.006695928,0.004429455,0.002673066,0.001471597,0.000739074,0.000338616,0.000141529,
     0.012162744,0.011616933,0.010122116,0.008045833,0.005834325,0.003859491,0.002329107,0.001282238,0.000643973,0.000295044,0.000123318,
@@ -55,26 +55,179 @@ void Surf::getDescriptors(bool upright)
     if (upright)
     {
         // U-SURF loop just gets descriptors
-        for (int i = 0; i < ipts_size; ++i)
-        {
-            // Set the Ipoint to be described
-            index = i;
+        
+        int x_arr[ipts_size];
+        int y_arr[ipts_size];
+        float scale_arr[ipts_size];
+        float* desc_arr[ipts_size];
 
-            // Extract upright (i.e. not rotation invariant) descriptors
-            getDescriptor(true);
+        for(int i = 0; i < ipts_size; i++)
+        {
+            x_arr[i] = ipts[i].x;
+            y_arr[i] = ipts[i].y;
+            scale_arr[i] = ipts[i].scale;
+            desc_arr[i] = new float[64];
         }
+
+        int img_step = img->widthStep/sizeof(float);
+        int img_height = img->height;
+        int img_width = img->width;
+        float *img_data = (float *) img->imageData;
+        float co, si, scale;
+        int y, x, i = 0;
+
+        int sample_x, sample_y, xx, yy, count=0;
+        int ix = 0, j = 0, jx = 0, xs = 0, ys = 0;
+        float dx, dy, mdx, mdy, sig, xxf, yyf;
+        float gauss_s1 = 0.f, gauss_s2 = 0.f;
+        float rx = 0.f, ry = 0.f, rrx = 0.f, rry = 0.f, len = 0.f;
+        float cx = -0.5f, cy = 0.f; //Subregion centers for the 4x4 gaussian weighting
+        int row_, column_, s_;
+
+        #pragma acc data copyin(x_arr[0:ipts_size], y_arr[0:ipts_size], scale_arr[0:ipts_size],\
+                        img_data[0:img_height*img_width], img_step, img_height, img_width, ipts_size,\
+                        co, si, i, y, x, scale, sample_x, sample_y, xx, yy, count,\
+                           ix, j, jx, xs, ys, dx, dy, mdx, mdy, sig, xxf, yyf, gauss_s1, gauss_s2, \
+                           rx, ry, rrx, rry, len, cx, cy, row_, column_, s_)\
+                        copy(desc_arr[0:ipts_size][0:64])
+        {
+
+        #pragma acc parallel loop private(co, si, i, y, x, scale, sample_x, sample_y, xx, yy, count,\
+                           ix, j, jx, xs, ys, dx, dy, mdx, mdy, sig, xxf, yyf, gauss_s1, gauss_s2, \
+                           rx, ry, rrx, rry, len, cx, cy)
+        for (int index = 0; index < ipts_size; ++index)
+        {
+            // Extract upright (i.e. not rotation invariant) descriptors
+            // getDescriptor(true, i);
+            
+            count=0, ix=0, j=0, jx=0, xs=0, ys=0;
+            gauss_s1=0.f;
+            gauss_s2=0.f;
+            rx=0.f, ry = 0.f, rrx = 0.f, rry = 0.f, len = 0.f;
+            cx = -0.5f, cy = 0.f;
+
+            scale = scale_arr[index];
+            x = x_arr[index];
+            y = y_arr[index];    
+            // desc = desc_arr[index];
+
+            co = 1;
+            si = 0;
+            i = -8;
+
+            //Calculate descriptor for this interest point
+            #pragma acc loop seq reduction(+:cx) private(i, j, cy)
+            while(i < 12)
+            {
+                j = -8;
+                i = i-4;
+
+                cx += 1.f;
+                cy = -0.5f;
+
+                #pragma acc loop seq reduction(+:cy) private(dx, dy, mdx, mdy, jx, xs, ys, xxf, yyf, sig, gauss_s2)
+                while(j < 12) 
+                {
+                    dx=dy=mdx=mdy=0.f;
+                    cy += 1.f;
+
+                    j = j - 4;
+
+                    ix = i + 5;
+                    jx = j + 5;
+
+                    xs = fRound(x + ( -jx*scale*si + ix*scale*co));
+                    ys = fRound(y + ( jx*scale*co + ix*scale*si));
+
+                    #pragma acc loop seq
+                    for (int k = i; k < i + 9; ++k) 
+                    {
+                        #pragma acc loop seq reduction(+:mdx, mdy) private(sample_x, sample_y, xx, yy, sig, gauss_s1, row_, column_, s_,rx,ry,rrx,rry)
+                        for (int l = j; l < j + 9; ++l) 
+                        {
+                            //Get coords of sample point on the rotated axis
+                            sample_x = fRound(x + (-l*scale*si + k*scale*co));
+                            sample_y = fRound(y + ( l*scale*co + k*scale*si));
+
+                            //Get the gaussian weighted x and y responses
+                            // gauss_s1 = gaussian(xs-sample_x,ys-sample_y,2.5f*scale);
+                            xx = xs-sample_x;
+                            yy = ys-sample_y;
+                            sig = 2.5f*scale;
+                            gauss_s1 = (1.0f/(2.0f*pi*sig*sig)) * exp( -(xx*xx+yy*yy)/(2.0f*sig*sig));
+
+                            // rx = haarX(sample_y, sample_x, 2*fRound(scale));
+                            row_ = sample_y;
+                            column_ = sample_x;
+                            s_ = 2*fRound(scale);
+                            rx = BoxIntegral_acc(img_data, row_-s_/2, column_, s_, s_/2, img_step, img_height, img_width)
+                                    -1 * BoxIntegral_acc(img_data, row_-s_/2, column_-s_/2, s_, s_/2, img_step, img_height, img_width); 
+                            
+                            // ry = haarY(sample_y, sample_x, 2*fRound(scale));
+                            row_ = sample_y;
+                            column_ = sample_x;
+                            s_ = 2*fRound(scale);
+                            ry = BoxIntegral_acc(img_data, row_, column_-s_/2, s_/2, s_, img_step, img_height, img_width) 
+                                    -1 * BoxIntegral_acc(img_data, row_-s_/2, column_-s_/2, s_/2, s_, img_step, img_height, img_width);
+
+                            //Get the gaussian weighted x and y responses on rotated axis
+                            rrx = gauss_s1*(-rx*si + ry*co);
+                            rry = gauss_s1*(rx*co + ry*si);
+
+                            dx += rrx;
+                            dy += rry;
+                            mdx += fabs(rrx);
+                            mdy += fabs(rry);
+
+                        }
+                    }
+
+                    //Add the values to the descriptor vector
+                    // gauss_s2 = gaussian(cx-2.0f,cy-2.0f,1.5f);
+                    xxf = cx-2.0f;
+                    yyf = cy-2.0f;
+                    sig = 2.5f*scale;
+                    gauss_s2 = (1.0f/(2.0f*pi*sig*sig)) * exp( -(xxf*xxf+yyf*yyf)/(2.0f*sig*sig));
+
+                    
+                    desc_arr[index][count++] = dx*gauss_s2;
+                    desc_arr[index][count++] = dy*gauss_s2;
+                    desc_arr[index][count++] = mdx*gauss_s2;
+                    desc_arr[index][count++] = mdy*gauss_s2;
+                
+                    len += (dx*dx + dy*dy + mdx*mdx + mdy*mdy) * gauss_s2*gauss_s2;
+
+                    j += 9;
+                }
+                i += 9;
+            }
+
+            //Convert to Unit Vector
+            len = sqrt(len);
+            for(int i = 0; i < 64; ++i)
+                desc_arr[index][i] /= len;
+        }
+
+        }
+        for(int i = 0; i < ipts_size; i++)
+            for(int j = 0; j < 64; j++)
+                ipts[i].descriptor[j] = desc_arr[i][j];
+
+        for(int i = 0; i < ipts_size; i++)
+            delete[] desc_arr[i];
     }
     else
     {
         // Main SURF-64 loop assigns orientations and gets descriptors
+        // #pragma acc parallel loop
         for (int i = 0; i < ipts_size; ++i)
         {
             // Set the Ipoint to be described
-            index = i;
+            // index = i;
 
             // Assign Orientations and extract rotation invariant descriptors
-            getOrientation();
-            getDescriptor(false);
+            getOrientation(i);
+            getDescriptor(false, i);
         }
     }
 }
@@ -82,7 +235,7 @@ void Surf::getDescriptors(bool upright)
 //-------------------------------------------------------
 
 //! Assign the supplied Ipoint an orientation
-void Surf::getOrientation()
+void Surf::getOrientation(int index)
 {
     Ipoint *ipt = &ipts[index];
     float gauss = 0.f, scale = ipt->scale;
@@ -98,7 +251,8 @@ void Surf::getOrientation()
         {
             if(i*i + j*j < 36) 
             {
-                gauss = static_cast<float>(gauss25[id[i+6]][id[j+6]]);
+                // gauss = static_cast<float>(gauss33[id[i+6]][id[j+6]]);
+                gauss = gauss33[id[i+6]][id[j+6]];
                 resX[idx] = gauss * haarX(r+j*s, c+i*s, 4*s);
                 resY[idx] = gauss * haarY(r+j*s, c+i*s, 4*s);
                 Ang[idx] = getAngle(resX[idx], resY[idx]);
@@ -153,7 +307,7 @@ void Surf::getOrientation()
 
 //! Get the modified descriptor. See Agrawal ECCV 08
 //! Modified descriptor contributed by Pablo Fernandez
-void Surf::getDescriptor(bool bUpright)
+void Surf::getDescriptor(bool bUpright, int index)
 {
     int y, x, sample_x, sample_y, count=0;
     int i = 0, ix = 0, j = 0, jx = 0, xs = 0, ys = 0;

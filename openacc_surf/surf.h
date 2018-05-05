@@ -20,10 +20,10 @@ class Surf {
     //---------------- Private Functions -----------------//
 
     //! Assign the current Ipoint an orientation
-    void getOrientation();
+    void getOrientation(int index);
     
     //! Get the descriptor. See Agrawal ECCV 08
-    void getDescriptor(bool bUpright = false);
+    void getDescriptor(bool bUpright = false, int index = 0);
 
     //! Calculate the value of the 2d gaussian at x,y
     inline float gaussian(int x, int y, float sig);
@@ -46,7 +46,7 @@ class Surf {
     IpVec &ipts;
 
     //! Index of current Ipoint in the vector
-    int index;
+    // int index;
 };
 
 
