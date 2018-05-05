@@ -1,6 +1,6 @@
-On machine with GTX GPU, compile with: pgc++ -acc -ta=tesla:cc60 -Minfo -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs` 
+On machine with GTX GPU, compile with: pgc++ -acc -ta=tesla:cc60 -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs` 
 
-(Not tested yet)On machine with Tesla GPU, compile with: pgc++ -acc -ta=tesla:managed -Minfo -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs` 
+On machine with Tesla GPU, compile with: pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs` 
 
 ./test [mode] [openacc mem copy mode] [blend_mode(only required in mode1 and mode2)]
 
