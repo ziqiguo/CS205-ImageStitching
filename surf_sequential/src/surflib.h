@@ -4,6 +4,8 @@
 
 #include <cv.h>
 #include <highgui.h>
+#include <ctime>
+#include <iostream>
 
 #include "integral.h"
 #include "fasthessian.h"
@@ -26,15 +28,21 @@ inline void surfDetDes(IplImage *img,    /* image to find Ipoints in */
     
     // Create Fast Hessian Object
     FastHessian fh(int_img, ipts, octaves, intervals, init_sample, thres);
- 
+    
     // Extract interest points and store in vector ipts
+    clock_t t0 = clock();
     fh.getIpoints();
+    clock_t t1 = clock();
+    std::cout<< "Keypoint detection took: " << float(t1 - t0) / CLOCKS_PER_SEC    << " seconds" << std::endl;
     
     // Create Surf Descriptor Object
     Surf des(int_img, ipts);
 
     // Extract the descriptors for the ipts
+    clock_t t2 = clock();
     des.getDescriptors(upright);
+    clock_t t3 = clock();
+    std::cout<< "Keypoint description took: " << float(t3 - t2) / CLOCKS_PER_SEC    << " seconds" << std::endl;
 
     // Deallocate the integral image
     cvReleaseImage(&int_img);

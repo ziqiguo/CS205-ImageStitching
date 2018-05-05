@@ -79,8 +79,8 @@ int mainStaticMatch()
 {
     IplImage *img1, *img2;
     
-    img1 = cvLoadImage("../../sequential/img1y.jpg");
-    img2 = cvLoadImage("../../sequential/img2y.jpg");
+    img1 = cvLoadImage("../../images/img1z.jpg");
+    img2 = cvLoadImage("../../images/img2z.jpg");
 
     cv::Mat m = cv::cvarrToMat(img1);
     // img1 = cvLoadImage("../imgs/img1.jpg");
@@ -120,12 +120,12 @@ int mainStaticMatch()
     std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
 
     cv::namedWindow("stitched", CV_WINDOW_AUTOSIZE );
-    cv::namedWindow("1", CV_WINDOW_AUTOSIZE );
-    cv::namedWindow("2", CV_WINDOW_AUTOSIZE );
-    cv::namedWindow("3", CV_WINDOW_AUTOSIZE );
-    cvShowImage("1", img1);
-    cvShowImage("2", img2);
-    cv::imshow("3", warpnmask.second);
+    // cv::namedWindow("1", CV_WINDOW_AUTOSIZE );
+    // cv::namedWindow("2", CV_WINDOW_AUTOSIZE );
+    // cv::namedWindow("3", CV_WINDOW_AUTOSIZE );
+    // cvShowImage("1", img1);
+    // cvShowImage("2", img2);
+    // cv::imshow("3", warpnmask.second);
     cv::imshow("stitched", stitched);
     cvWaitKey(0);
 

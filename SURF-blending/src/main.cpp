@@ -140,8 +140,8 @@ int mainStaticMatch()
 
 int mainBlending()
 {
-    IplImage *img1 = cvLoadImage("../../sequential/img1y.jpg");
-    IplImage *img2 = cvLoadImage("../../sequential/img2y.jpg");
+    IplImage *img1 = cvLoadImage("../../sequential/img1x.jpg");
+    IplImage *img2 = cvLoadImage("../../sequential/img2x.jpg");
 
     IpVec ipts1, ipts2;
     surfDetDes(img1,ipts1,false,4,4,2,0.0001f);

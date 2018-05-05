@@ -432,7 +432,7 @@ std::pair<cv::Mat, cv::Mat> getWarppedAcc(IpPairVec &matches, IplImage *original
 
             uchar b = src[i*step+j*channel], g = src[i*step+j*channel+1], r = src[i*step+j*channel+2];
 
-            if (std::floor(x) >= 0 && std::floor(x) < w*2 && std::floor(y) >= 0 && std::floor(y) < h)
+            if (std::floor(x) >= 0 && std::floor(x) < w*2 && std::floor(y) >= 0 && std::floor(y) < h) {
 
                 if (std::floor(x) != x || std::floor(y) != y) {
 
@@ -462,7 +462,8 @@ std::pair<cv::Mat, cv::Mat> getWarppedAcc(IpPairVec &matches, IplImage *original
                         mask_data[cy*maskStep + fx] = 255;
                         mask_data[cy*maskStep + cx] = 255;
                             
-                    }else{
+                    }
+                    else{
                         warp_data[fy*warpStep + fx*channel] = b;
                         warp_data[fy*warpStep + fx*channel + 1] = g;
                         warp_data[fy*warpStep + fx*channel + 2] = r;
@@ -470,13 +471,15 @@ std::pair<cv::Mat, cv::Mat> getWarppedAcc(IpPairVec &matches, IplImage *original
                         mask_data[fy*maskStep + fx] = 255;
                     }
                 
-                }else{
+                }
+                else{
                     warp_data[int(y)*warpStep + int(x)*channel] = b;
                     warp_data[int(y)*warpStep + int(x)*channel + 1] = g;
                     warp_data[int(y)*warpStep + int(x)*channel + 2] = r;
 
                     mask_data[int(y)*maskStep + int(x)] = 255;
                 }
+            }
         }
     }
 
