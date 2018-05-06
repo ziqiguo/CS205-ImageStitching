@@ -45,7 +45,7 @@ int mainImage(int single_mem_cpy)
 
 void captureThread(CvCapture* capture_0, CvCapture* capture_1, IplImage** img_0, IplImage** img_1)
 {
-    cout << "capture hi" << endl;
+    cout << "Capture thread initialized." << endl;
     while(!THREAD_EXIT_FLAG)
     {
         *img_0 = cvQueryFrame(capture_0);
@@ -70,7 +70,7 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
 
     int H_count=0;
 
-    cout << "stitching hi" << endl;
+    cout << "Stitching thread initialized." << endl;
 
     while(!THREAD_EXIT_FLAG) 
     {
@@ -223,6 +223,7 @@ int mainStream(int single_mem_cpy, int blend_mode)
     while(1) 
     {
         if(stitched_cpy == NULL)
+            cout << "From main thread: No stitched image yet."
             continue;
 
         try{
