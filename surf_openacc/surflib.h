@@ -36,7 +36,7 @@ inline void surfDetDes(IplImage *img,    /* image to find Ipoints in */
     clock_t start = clock();
     fh.getIpoints();
     clock_t end = clock();
-    std::cout<< "Extract Ipoint took: " << float(end - start) / CLOCKS_PER_SEC    << " seconds" << std::endl;
+    std::cout<< "Extract keypoints took: " << float(end - start) / CLOCKS_PER_SEC    << " seconds" << std::endl;
 
     // Create Surf Descriptor Object
     Surf des(int_img, ipts);

@@ -97,7 +97,7 @@ void FastHessian::getIpoints()
     // Build the response map
     buildResponseMap();
 
-    std::cout << "buildResponseMap took: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+    // std::cout << "buildResponseMap took: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
     start = std::clock();
     // Get the response layers
@@ -143,7 +143,7 @@ void FastHessian::getIpoints()
         }
     }
 
-    std::cout << "Ipoint vector took: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+    // std::cout << "Ipoint vector took: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 }
 
 //-------------------------------------------------------
@@ -300,7 +300,7 @@ void FastHessian::buildResponseMap()
 
         }
 
-        cout << "Real acc time took:" << (clock()-start)/ (double)(CLOCKS_PER_SEC / 1000) << "ms" << endl;
+        // cout << "Real acc time took:" << (clock()-start)/ (double)(CLOCKS_PER_SEC / 1000) << "ms" << endl;
 
         // copy cuda memory back
         int curr_size = 0; 

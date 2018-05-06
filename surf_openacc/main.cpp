@@ -25,8 +25,9 @@ int mainImage(int single_mem_cpy)
     surfDetDes(img, ipts, single_mem_cpy, false, 1, 4, 2, 0.0004f); 
     clock_t end = clock();
 
-    std::cout<< "Found: " << ipts.size() << " interest points" << std::endl;
-    std::cout<< "Took: " << float(end - start) / CLOCKS_PER_SEC    << " seconds" << std::endl;
+    // std::cout<< "Found: " << ipts.size() << " interest points" << std::endl;
+    std::cout << "===============" << std::endl;
+    std::cout << "Took: " << float(end - start) / CLOCKS_PER_SEC << " seconds" << std::endl;
 
     // Draw the detected points
     drawIpoints(img, ipts);
@@ -40,9 +41,9 @@ int mainImage(int single_mem_cpy)
 //-------------------------------------------------------
 
 void captureThread(CvCapture* capture_0, CvCapture* capture_1, IplImage** img_0, IplImage** img_1)
-{
+{   
     while(!THREAD_EXIT_FLAG)
-    {
+    {   
         *img_0 = cvQueryFrame(capture_0);
         *img_1 = cvQueryFrame(capture_1);
     }
@@ -100,10 +101,12 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
             start = clock();
             getMatches(ipts_0, ipts_1, matches);
             end = clock();
-            std::cout<< "Matching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+            std::cout<< "Keypoint matching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
 
             start = clock();
             H = findHom(matches);
+            end = clock();
+            std::cout<< "Homography took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
             // }
             if(video_mode)
             {
@@ -122,6 +125,7 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
             cv::Mat warpped, mask2;
             std::vector<cv::Mat> warp_mask;
 
+            start = clock();
             if(blend_mode == 0)
                 warpped = getWarppedAcc(img_1_ptr, H_mean);
             else
@@ -131,14 +135,14 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
                 warpped = warp_mask[0];
             }
             end = clock();
-            std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+            std::cout<< "Warping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
 
             start = clock();
             if(blend_mode == 0)
                 stitched = getCvStitch(img_0_ptr, warpped);
             else
                 stitched = getBlended(img_0_ptr, img_1_ptr, matches, warpped, mask2);
-            
+
             // limit access to thread shared variable
             img_lock.lock();
             if(H_count == 1)
@@ -148,7 +152,7 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
             img_lock.unlock();
             
             end = clock();
-            std::cout<< "stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+            std::cout<< "Stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
         }
         catch(cv::Exception& e)
         {
@@ -258,13 +262,17 @@ int mainStitchTest(int single_mem_cpy, int blend_mode)
     IpVec ipts1, ipts2;
     surfDetDes(img_0,ipts1,single_mem_cpy,false,4,4,2,0.0001f);
     surfDetDes(img_1,ipts2,single_mem_cpy,false,4,4,2,0.0001f);
-    clock_t end = clock();
-    std::cout<< "Took: " << float(end - start) / CLOCKS_PER_SEC    << " seconds to find featurs in 2 pics" << std::endl;
 
 
     IpPairVec matches;
+    clock_t t0 = clock();
     getMatches(ipts1,ipts2,matches);
+    clock_t t1 = clock();
     cv::Mat H = findHom(matches);
+    clock_t t2 = clock();
+
+    std::cout << "Keypoint matching took: " << float(t1 - t0) / CLOCKS_PER_SEC << " seconds" << std::endl;
+    std::cout << "Finding homography took: " << float(t2 - t1) / CLOCKS_PER_SEC << " seconds" << std::endl;
 
     if(blend_mode == 0)
         warpped = getWarppedAcc(img_1, H);
@@ -274,15 +282,19 @@ int mainStitchTest(int single_mem_cpy, int blend_mode)
         mask2 = warp_mask[1];
         warpped = warp_mask[0];
     }
-    end = clock();
-    std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+    clock_t t3 = clock();
+    std::cout<< "Warping took: " << float(t3 - t2) / CLOCKS_PER_SEC << std::endl;
 
-    start = clock();
     if(blend_mode == 0)
         stitched = getCvStitch(img_0, warpped);
     else
         stitched = getBlended(img_0, img_1, matches, warpped, mask2);
     
+    clock_t t4 = clock();
+    std::cout<< "Stitching (blending) took: " << float(t4 - t3) / CLOCKS_PER_SEC << std::endl;
+    std::cout << "===============" << std::endl;
+    std::cout << "Took: " << float(t4 - start) / CLOCKS_PER_SEC << " seconds" << std::endl;
+
     cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE );
     cv::imshow("stitched", stitched);
     cvWaitKey(0);
@@ -315,17 +327,17 @@ int mainVideo(int single_mem_cpy, int blend_mode)
     clock_t start, end;
 
     int H_count=0;
-
+         
     std::thread t1(captureThread, capture_0, capture_1, &img_0, &img_1);
-
     // sleep(1);
     std::thread t3(featureStitchThread, single_mem_cpy, blend_mode, &img_0, &img_1, &stitched_cpy, 1);
 
     cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE);
-
+    std::cout<< "window" << std::endl;
     while(1) 
-    {
+    {   
         if(stitched_cpy == NULL)
+            std::cout<< "null" << std::endl;
             continue;
         try{
             start = clock();
@@ -341,7 +353,8 @@ int mainVideo(int single_mem_cpy, int blend_mode)
             std::cout << "----------------------------------------------" << endl;
         }
         catch(cv::Exception& e)
-        {
+        {   
+            std::cout<< "error" << std::endl;
             continue;
         }
 

@@ -180,14 +180,14 @@ cv::Mat getCvWarpped(IpPairVec &matches, IplImage *original)
     clock_t start = clock();
     cv::Mat H = cv::findHomography(pt1s, pt2s, CV_RANSAC);
     clock_t end = clock();
-    std::cout<< "find homography took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
+    // std::cout<< "find homography took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
 
     // warping took most of the time
     cv::Mat warpped;
     start = clock();
     cv::warpPerspective(moriginal, warpped, H, cv::Size( moriginal.cols*2, moriginal.rows*2));
     end = clock();
-    std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
+    // std::cout<< "warpping took: " << float(end - start) / CLOCKS_PER_SEC << " seconds." << std::endl;
 
     return warpped;
 }
