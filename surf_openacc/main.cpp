@@ -72,7 +72,7 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
     {
         if(*img_0 == NULL or *img_1 == NULL)
         {
-            cout << "null" << endl;
+            cout << "From stitching thread: No capture yet." << endl;
             continue;
         }
         
@@ -81,17 +81,17 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
         img_1_ptr = *img_1;
 
         // resize video stream
-        // if(video_mode)
-        // {
-        //     sz.width = img_0_ptr->width*2/3;  
-        //     sz.height = img_0_ptr->height*2/3;  
-        //     desc_0 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);
-        //     desc_1 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);  
-        //     cvResize(img_0_ptr, desc_0, CV_INTER_CUBIC);
-        //     cvResize(img_1_ptr, desc_1, CV_INTER_CUBIC);
-        //     img_0_ptr = desc_0;
-        //     img_1_ptr = desc_1;
-        // }
+        if(video_mode)
+        {
+            sz.width = img_0_ptr->width*2/3;  
+            sz.height = img_0_ptr->height*2/3;  
+            desc_0 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);
+            desc_1 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);  
+            cvResize(img_0_ptr, desc_0, CV_INTER_CUBIC);
+            cvResize(img_1_ptr, desc_1, CV_INTER_CUBIC);
+            img_0_ptr = desc_0;
+            img_1_ptr = desc_1;
+        }
 
         H_count++;
 
