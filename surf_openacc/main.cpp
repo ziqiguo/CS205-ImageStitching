@@ -223,9 +223,10 @@ int mainStream(int single_mem_cpy, int blend_mode)
     while(1) 
     {
         if(stitched_cpy == NULL)
-            cout << "From main thread: No stitched image yet."
+        {
+            cout << "From main thread: No stitched image yet." << endl;
             continue;
-
+        }
         try{
             imshow_count++;
             start = clock();
