@@ -3,6 +3,7 @@
 #define SURFLIB_H
 
 #include <cv.h>
+#include <iostream>
 #include <highgui.h>
 
 #include "integral.h"

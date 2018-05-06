@@ -1,5 +1,6 @@
 #include <cv.h>
 #include <vector>
+#include <opencv2/opencv.hpp>
 
 #include "ipoint.h"
 

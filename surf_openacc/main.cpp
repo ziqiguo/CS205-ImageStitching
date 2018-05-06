@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <queue>
 #include <mutex>
+#include <opencv2/opencv.hpp>
 
 std::mutex img_lock;
 
@@ -237,7 +238,7 @@ int mainStream(int single_mem_cpy, int blend_mode)
 }
 
 
-int mainStichTest(int single_mem_cpy, int blend_mode)
+int mainStitchTest(int single_mem_cpy, int blend_mode)
 {
     IplImage *img_0, *img_1;
     cv::Mat warpped, stitched, mask2;
@@ -365,7 +366,7 @@ int main(int argc, char* argv[])
 
     // show match between SURF
     if(atoi(argv[1]) == 1)
-        return mainStichTest(atoi(argv[2]), atoi(argv[3]));
+        return mainStitchTest(atoi(argv[2]), atoi(argv[3]));
 
     // SURF on webcam
     if(atoi(argv[1]) == 2)
