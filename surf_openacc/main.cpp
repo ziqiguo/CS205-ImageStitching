@@ -11,6 +11,9 @@
 std::mutex img_lock;
 
 int THREAD_EXIT_FLAG = false;
+int capture_count=0;
+int imshow_count=0;
+int stitch_count=0;
 
 int mainImage(int single_mem_cpy)
 {
@@ -47,6 +50,7 @@ void captureThread(CvCapture* capture_0, CvCapture* capture_1, IplImage** img_0,
     {
         *img_0 = cvQueryFrame(capture_0);
         *img_1 = cvQueryFrame(capture_1);
+        capture_count++;
         // cout << "ccc" << endl;
     }
 }
@@ -70,7 +74,7 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
 
     while(!THREAD_EXIT_FLAG) 
     {
-        if(*img_0 == NULL or *img_1 == NULL)
+        if(*img_0 == NULL || *img_1 == NULL)
         {
             cout << "From stitching thread: No capture yet." << endl;
             continue;
@@ -96,7 +100,9 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
         H_count++;
 
         try{
-            // if(H_count % 10 == 1)
+
+            stitch_count++;
+            // if(H_count % 100 == 1)
             // {
             surfDetDes(img_0_ptr, ipts_0, single_mem_cpy, true, 4, 4, 2, 0.002f);        
             surfDetDes(img_1_ptr, ipts_1, single_mem_cpy, true, 4, 4, 2, 0.002f);        
@@ -202,7 +208,7 @@ int mainStream(int single_mem_cpy, int blend_mode)
     IplImage *img_0 = NULL;
     IplImage *img_1 = NULL;
     IplImage *img_0_ptr, *img_1_ptr;
-    cv::Mat H, stitched, *stitched_cpy, H_mean;
+    cv::Mat H, stitched, H_mean, *stitched_cpy=NULL;
     IpPairVec matches;
     clock_t start, end;
 
@@ -212,6 +218,7 @@ int mainStream(int single_mem_cpy, int blend_mode)
 
     std::thread t3(featureStitchThread, single_mem_cpy, blend_mode, &img_0, &img_1, &stitched_cpy, 0);
 
+    clock_t sss = clock_t();
     // Main capture loop
     while(1) 
     {
@@ -219,9 +226,16 @@ int mainStream(int single_mem_cpy, int blend_mode)
             continue;
 
         try{
+            imshow_count++;
             start = clock();
             img_lock.lock();
             IplImage* display = cvCloneImage(&(IplImage)(*stitched_cpy));
+
+            // int fps_count = min(min(stitch_count, capture_count), imshow_count);
+            // cout << stitch_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << ", " \
+            //             << capture_count*1.f/(clock()-sss)* CLOCKS_PER_SEC\
+            //              << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
+            // drawFPS_real(display, 1.f*fps_count/(clock()-sss)* CLOCKS_PER_SEC);
             drawFPS(display);
             cvShowImage("stitched", display);
             cvReleaseImage(&display);
@@ -334,7 +348,7 @@ int mainVideo(int single_mem_cpy, int blend_mode)
     IpPairVec matches;
     clock_t start, end;
 
-    int H_count=0;
+    int H_count=0, fps_count=0;
          
     std::thread t1(captureThread, capture_0, capture_1, &img_0, &img_1);
     // sleep(1);
@@ -342,6 +356,7 @@ int mainVideo(int single_mem_cpy, int blend_mode)
 
     cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE);
     std::cout<< "window" << std::endl;
+    clock_t sss = clock_t();
     while(1) 
     {   
         if(stitched_cpy == NULL)
@@ -407,12 +422,20 @@ int mainVideo(int single_mem_cpy, int blend_mode)
             // end = clock();
             // std::cout<< "Stitching took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
 
+            imshow_count++;
 
             start = clock();
             img_lock.lock();
             IplImage* display = cvCloneImage(&(IplImage)(*stitched_cpy));
             img_lock.unlock();
-            drawFPS(display);
+
+            int fps_count = min(min(stitch_count, capture_count), imshow_count);
+
+            cout << stitch_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << ", " \
+                        << capture_count*1.f/(clock()-sss)* CLOCKS_PER_SEC\
+                         << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
+            
+            drawFPS_real(display, 1.f*fps_count/(clock()-sss)* CLOCKS_PER_SEC);
             cvShowImage("stitched", display);
             cvReleaseImage(&display);
             // cv::imshow("stitched", *stitched_cpy);
