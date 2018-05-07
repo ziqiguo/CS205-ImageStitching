@@ -4,9 +4,7 @@
 
 #include <cv.h>
 #include "ipoint.h"
-
 #include <vector>
-
 
 //! Display error message and terminate program
 void error(const char *msg);
@@ -30,6 +28,8 @@ void drawIpoints(IplImage *img, std::vector<Ipoint> &ipts, int tailSize = 0);
 void drawWindows(IplImage *img, std::vector<Ipoint> &ipts);
 
 // Draw the FPS figure on the image (requires at least 2 calls)
+void drawFPS_real(IplImage *img, float fps);
+
 void drawFPS(IplImage *img);
 
 //! Draw a Point at feature location

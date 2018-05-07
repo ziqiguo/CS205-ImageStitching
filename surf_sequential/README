@@ -1,87 +1,23 @@
-SURF
+Compile on Ubuntu:
 
+g++ -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 
+=======
 
-A C++ implementation of SURF algorithm. It uses the OpenCV libraries and includes 
+Compile on MacOS:
+g++-7 -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 
-the following capabilities
+./test [mode] [openacc mem copy mode] [blend_mode(only required in mode1 and mode2)]
 
-  - 1 to run SURF on static image for the path given
+first mode argument: 
+	0 -> extract features from single image
+	1 -> extract features and compute matches
+	2 -> extract features from video frames
 
-  - 2 to capture from a webcam
+openacc mem copy mode:
+	0 -> mempry copy from host to device per response layer
+	1 -> one single mem copy
 
-  - 3 to match find an object in an image (work in progress)
-
-  - 4 to display moving features (work in progress)
-
-  - 5 to show matches between static images
-
-
-
-Usage
-
--------------
-
-
-
-To directly open the SURF featurettes for any of the ove mentioned procedures::
-
-
-
-    $  g++ main.cpp surf.cpp utils.cpp ipoint.cpp integral.cpp fasthessian.cpp `pkg-config opencv --cflags --libs` -o my_example
-
-
-
-
-
-Algorithm and Need for developement
-
--------------
-
-SURF as an algorithm was developed as an alternate to SIFT with faster processing and quick results for a certain loss of sccuracy. This code was developed for enabling stereovision for a farmbot project. Also this was used to bifurcate plant body from rest of the surroundings. The further processing was done with HAAR classifiers. This code was also used for 3D reconstruction of certain other sceanarios.
-
-
-
-For further information on this see the wiki page of SURF.
-
-
-
-The above code is a significant improvement of exsisting SURF codes on the interenet. Since it was writen in early 2010, ther emight be better versions of this code. Also any further imporvements in this code are welcome, since i might not be working on it anymore in the near future atleast
-
-
-
-
-
-Credits
-
--------
-
- C. Evans, Research Into Robust Visual Features,         
-
-  MSc University of Bristol
-
-
-
-SIFT and SURR wiki pages
-
-
-
-OpenCV - Willow garage documentation.
-
-
-
-Publications citing this code:
-
-
-Aadil Seshadri, Abhinav Gupta, Nishad Kamdar, Varad Gunjal, “Development of a Pattern
-Recognition System based on Image Processing implemented on a Safety Critical Embedded
-
-+System for Accident Prevention”.
-
-+-Advanced Materials Research Vols. 341-342 (2012) pp 811-815
-
-+Online available since 2011/Sep/27 at www.scientific.net
-
-+© (2012) Trans Tech Publications, Switzerland
-
-+doi:10.4028/www.scientific.net/AMR.341-342.811
+blend_mode:
+	0 -> off
+	1 -> on

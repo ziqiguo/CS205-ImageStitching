@@ -41,4 +41,22 @@ inline float BoxIntegral(IplImage *img, int row, int col, int rows, int cols)
   return std::max(0.f, A - B - C + D);
 }
 
+inline float BoxIntegral_acc(float *img_data, int row, int col, int rows, int cols, int step, int height, int width) 
+{
+  
+  // The subtraction by one for row/col is because row/col is inclusive.
+  int r1 = std::min(row,          height) - 1;
+  int c1 = std::min(col,          width)  - 1;
+  int r2 = std::min(row + rows,   height) - 1;
+  int c2 = std::min(col + cols,   width)  - 1;
+
+  float A(0.0f), B(0.0f), C(0.0f), D(0.0f);
+  if (r1 >= 0 && c1 >= 0) A = img_data[r1 * step + c1];
+  if (r1 >= 0 && c2 >= 0) B = img_data[r1 * step + c2];
+  if (r2 >= 0 && c1 >= 0) C = img_data[r2 * step + c1];
+  if (r2 >= 0 && c2 >= 0) D = img_data[r2 * step + c2];
+
+  return std::max(0.f, A - B - C + D);
+}
+
 #endif

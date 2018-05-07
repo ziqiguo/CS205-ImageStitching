@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <math.h>
+#include "opencv2/stitching/detail/blenders.hpp"
+
 
 //-------------------------------------------------------
 
@@ -16,6 +18,16 @@ typedef std::vector<std::pair<Ipoint, Ipoint> > IpPairVec;
 void getMatches(IpVec &ipts1, IpVec &ipts2, IpPairVec &matches);
 int translateCorners(IpPairVec &matches, const CvPoint src_corners[4], CvPoint dst_corners[4]);
 
+cv::Mat getCvStitch(IplImage *src, cv::Mat warpped);
+cv::Mat getWarpped(IplImage *original, cv::Mat H);
+cv::Mat getCvWarpped(IpPairVec &matches, IplImage *original);
+cv::Mat getWarppedReMap(IpPairVec &matches, IplImage *original);
+
+cv::Mat findHom(IpPairVec &matches);
+cv::Mat getWarppedAcc(IplImage *original, cv::Mat H);
+std::vector<cv::Mat> getWarpped_blend(IplImage *original, cv::Mat H);
+cv::Mat getHomography(IpPairVec &matches, IplImage *original);
+cv::Mat getBlended(IplImage *img1, IplImage *img2, IpPairVec &matches, cv::Mat &warpped, cv::Mat &mask2);
 //-------------------------------------------------------
 
 class Ipoint {

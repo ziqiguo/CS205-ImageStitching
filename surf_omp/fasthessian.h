@@ -3,6 +3,7 @@
 
 #include <cv.h>
 #include "ipoint.h"
+#include "utils.h"
 
 #include <vector>
 
@@ -19,6 +20,7 @@ class FastHessian {
      
         //! Constructor without image
         FastHessian(std::vector<Ipoint> &ipts, 
+                                const int single_mem_cpy,
                                 const int octaves = OCTAVES, 
                                 const int intervals = INTERVALS, 
                                 const int init_sample = INIT_SAMPLE, 
@@ -26,7 +28,8 @@ class FastHessian {
 
         //! Constructor with image
         FastHessian(IplImage *img, 
-                                std::vector<Ipoint> &ipts, 
+                                std::vector<Ipoint> &ipts,
+                                const int single_mem_cpy, 
                                 const int octaves = OCTAVES, 
                                 const int intervals = INTERVALS, 
                                 const int init_sample = INIT_SAMPLE, 
@@ -39,7 +42,8 @@ class FastHessian {
         void saveParameters(const int octaves, 
                                                 const int intervals,
                                                 const int init_sample, 
-                                                const float thres);
+                                                const float thres,
+                                                const int single_mem_cpy);
 
         //! Set or re-set the integral image source
         void setIntImage(IplImage *img);
@@ -61,17 +65,19 @@ class FastHessian {
         int isExtremum(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b);        
         
         //! Interpolation functions - adapted from Lowe's SIFT implementation
-        void interpolateExtremum(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b);
+        void interpolateExtremum(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b);//, Ipoint* ipts_tmp, int* changed);
         void interpolateStep(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b,
                                                     double* xi, double* xr, double* xc );
-        CvMat* deriv3D(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b);
-        CvMat* hessian3D(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b);
+        double** deriv3D(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b);
+        double** hessian3D(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b);
 
         //---------------- Private Variables -----------------//
 
         //! Pointer to the integral Image, and its attributes 
         IplImage *img;
         int i_width, i_height;
+
+        int single_mem_cpy;
 
         //! Reference to vector of features passed from outside 
         std::vector<Ipoint> &ipts;
@@ -90,6 +96,7 @@ class FastHessian {
 
         //! Threshold value for blob resonses
         float thresh;
+
 };
 
 

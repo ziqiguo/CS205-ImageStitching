@@ -10,32 +10,30 @@
 #include "responselayer.h"
 #include "fasthessian.h"
 
-
-
 using namespace std;
 
 //-------------------------------------------------------
 
 //! Constructor without image
-FastHessian::FastHessian(std::vector<Ipoint> &ipts, 
+FastHessian::FastHessian(std::vector<Ipoint> &ipts, const int single_mem_cpy,
                                                  const int octaves, const int intervals, const int init_sample, 
                                                  const float thresh) 
                                                  : ipts(ipts), i_width(0), i_height(0)
 {
     // Save parameter set
-    saveParameters(octaves, intervals, init_sample, thresh);
+    saveParameters(octaves, intervals, init_sample, thresh, single_mem_cpy);
 }
 
 //-------------------------------------------------------
 
 //! Constructor with image
-FastHessian::FastHessian(IplImage *img, std::vector<Ipoint> &ipts, 
+FastHessian::FastHessian(IplImage *img, std::vector<Ipoint> &ipts, const int single_mem_cpy,
                                                  const int octaves, const int intervals, const int init_sample, 
                                                  const float thresh) 
                                                  : ipts(ipts), i_width(0), i_height(0)
 {
     // Save parameter set
-    saveParameters(octaves, intervals, init_sample, thresh);
+    saveParameters(octaves, intervals, init_sample, thresh, single_mem_cpy);
 
     // Set the current image
     setIntImage(img);
@@ -55,7 +53,7 @@ FastHessian::~FastHessian()
 
 //! Save the parameters
 void FastHessian::saveParameters(const int octaves, const int intervals, 
-                                                                 const int init_sample, const float thresh)
+                                            const int init_sample, const float thresh, const int single_mem_cpy)
 {
     // Initialise variables with bounds-checked values
     this->octaves = 
@@ -65,6 +63,8 @@ void FastHessian::saveParameters(const int octaves, const int intervals,
     this->init_sample = 
         (init_sample > 0 && init_sample <= 6 ? init_sample : INIT_SAMPLE);
     this->thresh = (thresh >= 0 ? thresh : THRES);
+
+    this->single_mem_cpy = single_mem_cpy;
 }
 
 
@@ -91,39 +91,58 @@ void FastHessian::getIpoints()
     // Clear the vector of exisiting ipts
     ipts.clear();
 
-    // Build the response map
-    clock_t t0 = clock();
-    buildResponseMap();
-    clock_t t1 = clock();
+    std::clock_t start;
+    start = std::clock();
 
+    // Build the response map
+    buildResponseMap();
+
+    // std::cout << "buildResponseMap took: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+
+    start = std::clock();
     // Get the response layers
     ResponseLayer *b, *m, *t;
 
-    for (int o = 0; o < octaves; ++o) for (int i = 0; i <= 1; ++i)
+    for (int o = 0; o < octaves; ++o) 
     {
-        b = responseMap.at(filter_map[o][i]);
-        m = responseMap.at(filter_map[o][i+1]);
-        t = responseMap.at(filter_map[o][i+2]);
-
-        // loop over middle response layer at density of the most 
-        // sparse layer (always top), to find maxima across scale and space
-        for (int r = 0; r < t->height; ++r)
+        for (int i = 0; i <= 1; ++i)
         {
-            for (int c = 0; c < t->width; ++c)
+            b = responseMap.at(filter_map[o][i]);
+            m = responseMap.at(filter_map[o][i+1]);
+            t = responseMap.at(filter_map[o][i+2]);
+
+            // Ipoint ipts_tmp[t->height][t->width];
+            // int changed[t->height][t->width];
+
+            // loop over middle response layer at density of the most 
+            // sparse layer (always top), to find maxima across scale and space
+
+            
+            for (int r = 0; r < t->height; ++r)
             {
-                if (isExtremum(r, c, t, m, b))
+                for (int c = 0; c < t->width; ++c)
                 {
-                    interpolateExtremum(r, c, t, m, b);
+                    if (isExtremum(r, c, t, m, b))
+                    {
+                        interpolateExtremum(r, c, t, m, b);//, &ipts_tmp[r][c], &changed[r][c]);
+                    }
                 }
             }
+
+            // for (int r = 0; r < t->height; ++r)
+            // {
+            //     for (int c = 0; c < t->width; ++c)
+            //     {
+            //         if (changed[r][c] == 1)
+            //         {
+            //             ipts.push_back(ipts_tmp[r][c]);
+            //         }
+            //     }
+            // }
         }
     }
 
-    clock_t t2 = clock();
-
-    std::cout<< "Build response map: " << float(t1 - t0) / CLOCKS_PER_SEC << std::endl;
-    std::cout<< "Interpolate extremum: " << float(t2 - t1) / CLOCKS_PER_SEC << std::endl;
-
+    // std::cout << "Ipoint vector took: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 }
 
 //-------------------------------------------------------
@@ -148,6 +167,8 @@ void FastHessian::buildResponseMap()
     int h = (i_height / init_sample);
     int s = (init_sample);
 
+    int rsize;
+
     // Calculate approximated determinant of hessian values
     if (octaves >= 1)
     {
@@ -155,80 +176,44 @@ void FastHessian::buildResponseMap()
         responseMap.push_back(new ResponseLayer(w,     h,     s,     15));
         responseMap.push_back(new ResponseLayer(w,     h,     s,     21));
         responseMap.push_back(new ResponseLayer(w,     h,     s,     27));
+        rsize = 4;
     }
  
     if (octaves >= 2)
     {
         responseMap.push_back(new ResponseLayer(w/2, h/2, s*2, 39));
         responseMap.push_back(new ResponseLayer(w/2, h/2, s*2, 51));
+        rsize = 6;
     }
 
     if (octaves >= 3)
     {
         responseMap.push_back(new ResponseLayer(w/4, h/4, s*4, 75));
         responseMap.push_back(new ResponseLayer(w/4, h/4, s*4, 99));
+        rsize = 8;
     }
 
     if (octaves >= 4)
     {
         responseMap.push_back(new ResponseLayer(w/8, h/8, s*8, 147));
         responseMap.push_back(new ResponseLayer(w/8, h/8, s*8, 195));
+        rsize = 10;
     }
 
     if (octaves >= 5)
     {
         responseMap.push_back(new ResponseLayer(w/16, h/16, s*16, 291));
         responseMap.push_back(new ResponseLayer(w/16, h/16, s*16, 387));
+        rsize = 12;
     }
 
-    // Extract responses from the image
-    unsigned int i;
-    #pragma omp parallel for private(i) shared(responseMap, img)
+
     for (unsigned int i = 0; i < responseMap.size(); ++i)
     {
-        // buildResponseLayer(responseMap[i]);
-        ResponseLayer *rl = responseMap[i];
-        float *responses = rl->responses;                 // response storage
-        unsigned char *laplacian = rl->laplacian; // laplacian sign storage
-        int step = rl->step;                                            // step size for this filter
-        int b = (rl->filter - 1) / 2 + 1;                 // border for this filter
-        int l = rl->filter / 3;                                     // lobe for this filter (filter size / 3)
-        int w = rl->filter;                                             // filter size
-        float inverse_area = 1.f/(w*w);                     // normalisation factor
-        float Dxx, Dyy, Dxy;
-
-        for(int r, c, ar = 0, index = 0; ar < rl->height; ++ar) 
-        {
-            for(int ac = 0; ac < rl->width; ++ac, index++) 
-            {
-                // get the image coordinates
-                r = ar * step;
-                c = ac * step; 
-
-                // Compute response components
-                Dxx = BoxIntegral(img, r - l + 1, c - b, 2*l - 1, w)
-                        - BoxIntegral(img, r - l + 1, c - l / 2, 2*l - 1, l)*3;
-                Dyy = BoxIntegral(img, r - b, c - l + 1, w, 2*l - 1)
-                        - BoxIntegral(img, r - l / 2, c - l + 1, l, 2*l - 1)*3;
-                Dxy = + BoxIntegral(img, r - l, c + 1, l, l)
-                            + BoxIntegral(img, r + 1, c - l, l, l)
-                            - BoxIntegral(img, r - l, c - l, l, l)
-                            - BoxIntegral(img, r + 1, c + 1, l, l);
-
-                // Normalise the filter responses with respect to their size
-                Dxx *= inverse_area;
-                Dyy *= inverse_area;
-                Dxy *= inverse_area;
-             
-                // Get the determinant of hessian response & laplacian sign
-                responses[index] = (Dxx * Dyy - 0.81f * Dxy * Dxy);
-                laplacian[index] = (Dxx + Dyy >= 0 ? 1 : 0);
-            }
-        }
+        buildResponseLayer(responseMap[i]);
     }
 }
 
-//-------------------------------------------------------
 
 //! Calculate DoH responses for supplied layer
 void FastHessian::buildResponseLayer(ResponseLayer *rl)
@@ -242,39 +227,48 @@ void FastHessian::buildResponseLayer(ResponseLayer *rl)
     float inverse_area = 1.f/(w*w);                     // normalisation factor
     float Dxx, Dyy, Dxy;
 
-    for(int r, c, ar = 0, index = 0; ar < rl->height; ++ar) 
+    int height = rl->height;
+    int width = rl->width;
+    int img_step = img->widthStep/sizeof(float);
+
+    int img_height = img->height;
+    int img_width = img->width;
+
+    float *img_data = (float *) img->imageData;
+
+    int r, c;
+
     {
-        for(int ac = 0; ac < rl->width; ++ac, index++) 
+    for(int ar = 0; ar < height; ++ar) 
+    {  
+        for(int ac = 0; ac < width; ++ac) 
         {
             // get the image coordinates
             r = ar * step;
             c = ac * step; 
 
             // Compute response components
-            Dxx = BoxIntegral(img, r - l + 1, c - b, 2*l - 1, w)
-                    - BoxIntegral(img, r - l + 1, c - l / 2, 2*l - 1, l)*3;
-            Dyy = BoxIntegral(img, r - b, c - l + 1, w, 2*l - 1)
-                    - BoxIntegral(img, r - l / 2, c - l + 1, l, 2*l - 1)*3;
-            Dxy = + BoxIntegral(img, r - l, c + 1, l, l)
-                        + BoxIntegral(img, r + 1, c - l, l, l)
-                        - BoxIntegral(img, r - l, c - l, l, l)
-                        - BoxIntegral(img, r + 1, c + 1, l, l);
+            Dxx = BoxIntegral_acc(img_data, r - l + 1, c - b, 2*l - 1, w, img_step, img_height, img_width)
+                    - BoxIntegral_acc(img_data, r - l + 1, c - l / 2, 2*l - 1, l, img_step, img_height, img_width)*3;
+            Dyy = BoxIntegral_acc(img_data, r - b, c - l + 1, w, 2*l - 1, img_step, img_height, img_width)
+                    - BoxIntegral_acc(img_data, r - l / 2, c - l + 1, l, 2*l - 1, img_step, img_height, img_width)*3;
+            Dxy = BoxIntegral_acc(img_data, r - l, c + 1, l, l, img_step, img_height, img_width)
+                        + BoxIntegral_acc(img_data, r + 1, c - l, l, l, img_step, img_height, img_width)
+                        - BoxIntegral_acc(img_data, r - l, c - l, l, l, img_step, img_height, img_width)
+                        - BoxIntegral_acc(img_data, r + 1, c + 1, l, l, img_step, img_height, img_width);
 
             // Normalise the filter responses with respect to their size
             Dxx *= inverse_area;
             Dyy *= inverse_area;
             Dxy *= inverse_area;
-         
-            // Get the determinant of hessian response & laplacian sign
-            responses[index] = (Dxx * Dyy - 0.81f * Dxy * Dxy);
-            laplacian[index] = (Dxx + Dyy >= 0 ? 1 : 0);
 
-#ifdef RL_DEBUG
-            // create list of the image coords for each response
-            rl->coords.push_back(std::make_pair<int,int>(r,c));
-#endif
+            responses[ar*width + ac] = (Dxx * Dyy - 0.81 * Dxy * Dxy);
+            laplacian[ar*width + ac] = (Dxx + Dyy >= 0 ? 1 : 0);
         }
     }
+
+    }
+
 }
     
 //-------------------------------------------------------
@@ -292,6 +286,7 @@ int FastHessian::isExtremum(int r, int c, ResponseLayer *t, ResponseLayer *m, Re
     if (candidate < thresh) 
         return 0; 
 
+    int ret_val = 1;
     for (int rr = -1; rr <=1; ++rr)
     {
         for (int cc = -1; cc <=1; ++cc)
@@ -302,22 +297,22 @@ int FastHessian::isExtremum(int r, int c, ResponseLayer *t, ResponseLayer *m, Re
                 ((rr != 0 || cc != 0) && m->getResponse(r+rr, c+cc, t) >= candidate) ||
                 b->getResponse(r+rr, c+cc, t) >= candidate
                 ) 
-                return 0;
+                ret_val = 0;
         }
     }
 
-    return 1;
+    return ret_val;
 }
 
 //-------------------------------------------------------
 
 //! Interpolate scale-space extrema to subpixel accuracy to form an image feature.     
-void FastHessian::interpolateExtremum(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b)
+void FastHessian::interpolateExtremum(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b)//, Ipoint* ipts_tmp, int* changed)
 {
     // get the step distance between filters
     // check the middle filter is mid way between top and bottom
     int filterStep = (m->filter - b->filter);
-    assert(filterStep > 0 && t->filter - m->filter == m->filter - b->filter);
+    // assert(filterStep > 0 && t->filter - m->filter == m->filter - b->filter);
  
     // Get the offsets to the actual location of the extremum
     double xi = 0, xr = 0, xc = 0;
@@ -332,6 +327,8 @@ void FastHessian::interpolateExtremum(int r, int c, ResponseLayer *t, ResponseLa
         ipt.scale = static_cast<float>((0.1333f) * (m->filter + xi * filterStep));
         ipt.laplacian = static_cast<int>(m->getLaplacian(r,c,t));
         ipts.push_back(ipt);
+        // *ipts_tmp = ipt;
+        // *changed = 1;
     }
 }
 
@@ -341,51 +338,28 @@ void FastHessian::interpolateExtremum(int r, int c, ResponseLayer *t, ResponseLa
 void FastHessian::interpolateStep(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b, 
                                                                     double* xi, double* xr, double* xc )
 {
-    CvMat* dD, * H, * H_inv, X;
-    double x[3] = { 0 };
+    // double** dD, * H, * H_inv, X;
+    // double x[3] = {0, 0, 0};
 
-    dD = deriv3D( r, c, t, m, b );
-    H = hessian3D( r, c, t, m, b );
-    H_inv = cvCreateMat( 3, 3, CV_64FC1 );
-    cvInvert( H, H_inv, CV_SVD );
-    cvInitMatHeader( &X, 3, 1, CV_64FC1, x, CV_AUTOSTEP );
-    cvGEMM( H_inv, dD, -1, NULL, 0, &X, 0 );
-
-    cvReleaseMat( &dD );
-    cvReleaseMat( &H );
-    cvReleaseMat( &H_inv );
-
-    *xi = x[2];
-    *xr = x[1];
-    *xc = x[0];
-}
-
-//-------------------------------------------------------
-
-//! Computes the partial derivatives in x, y, and scale of a pixel.
-CvMat* FastHessian::deriv3D(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b)
-{
-    CvMat* dI;
+    //--------------------------------------------------------------------------
+    // dD = deriv3D( r, c, t, m, b );
+    double dI[3][1];
     double dx, dy, ds;
 
     dx = (m->getResponse(r, c + 1, t) - m->getResponse(r, c - 1, t)) / 2.0;
     dy = (m->getResponse(r + 1, c, t) - m->getResponse(r - 1, c, t)) / 2.0;
     ds = (t->getResponse(r, c) - b->getResponse(r, c, t)) / 2.0;
-    
-    dI = cvCreateMat( 3, 1, CV_64FC1 );
-    cvmSet( dI, 0, 0, dx );
-    cvmSet( dI, 1, 0, dy );
-    cvmSet( dI, 2, 0, ds );
 
-    return dI;
-}
+    for(int i = 0; i < 3; i++)
+        for(int j = 0; j < 1; j++)
+            dI[i][j] = 0;
+    dI[0][0] = dx;
+    dI[1][0] = dy;
+    dI[2][0] = ds;
 
-//-------------------------------------------------------
-
-//! Computes the 3D Hessian matrix for a pixel.
-CvMat* FastHessian::hessian3D(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b)
-{
-    CvMat* H;
+    //--------------------------------------------------------------------------
+    // H = hessian3D( r, c, t, m, b );
+    double H[3][3];
     double v, dxx, dyy, dss, dxy, dxs, dys;
 
     v = m->getResponse(r, c, t);
@@ -399,18 +373,121 @@ CvMat* FastHessian::hessian3D(int r, int c, ResponseLayer *t, ResponseLayer *m, 
     dys = ( t->getResponse(r + 1, c) - t->getResponse(r - 1, c) - 
                     b->getResponse(r + 1, c, t) + b->getResponse(r - 1, c, t) ) / 4.0;
 
-    H = cvCreateMat( 3, 3, CV_64FC1 );
-    cvmSet( H, 0, 0, dxx );
-    cvmSet( H, 0, 1, dxy );
-    cvmSet( H, 0, 2, dxs );
-    cvmSet( H, 1, 0, dxy );
-    cvmSet( H, 1, 1, dyy );
-    cvmSet( H, 1, 2, dys );
-    cvmSet( H, 2, 0, dxs );
-    cvmSet( H, 2, 1, dys );
-    cvmSet( H, 2, 2, dss );
+    for(int i = 0; i < 3; i++)
+        for(int j = 0; j < 3; j++)
+            H[i][j] = 0;
+    H[0][0] = dxx;
+    H[0][1] = dxy;
+    H[0][2] = dxs;
+    H[1][0] = dxy;
+    H[1][1] = dyy;
+    H[1][2] = dys;
+    H[2][0] = dxs;
+    H[2][1] = dys;
+    H[2][2] = dss;
 
-    return H;
+    //--------------------------------------------------------------------------
+    // H_inv = cvCreateMat( 3, 3, CV_64FC1 );
+    // cvInvert( H, H_inv, CV_SVD );
+    double det = H[0][0] * (H[1][1] * H[2][2] - H[2][1] * H[1][2]) -
+             H[0][1] * (H[1][0] * H[2][2] - H[1][2] * H[2][0]) +
+             H[0][2] * (H[1][0] * H[2][1] - H[1][1] * H[2][0]);
+    double invdet = 1 / det;
+
+    double H_inv[3][3]; // inverse of matrix H
+    H_inv[0][0] = (H[1][1] * H[2][2] - H[2][1] * H[1][2]) * invdet;
+    H_inv[0][1] = (H[0][2] * H[2][1] - H[0][1] * H[2][2]) * invdet;
+    H_inv[0][2] = (H[0][1] * H[1][2] - H[0][2] * H[1][1]) * invdet;
+    H_inv[1][0] = (H[1][2] * H[2][0] - H[1][0] * H[2][2]) * invdet;
+    H_inv[1][1] = (H[0][0] * H[2][2] - H[0][2] * H[2][0]) * invdet;
+    H_inv[1][2] = (H[1][0] * H[0][2] - H[0][0] * H[1][2]) * invdet;
+    H_inv[2][0] = (H[1][0] * H[2][1] - H[2][0] * H[1][1]) * invdet;
+    H_inv[2][1] = (H[2][0] * H[0][1] - H[0][0] * H[2][1]) * invdet;
+    H_inv[2][2] = (H[0][0] * H[1][1] - H[1][0] * H[0][1]) * invdet;
+
+
+    //--------------------------------------------------------------------------
+    // cvInitMatHeader( &X, 3, 1, CV_64FC1, x, CV_AUTOSTEP );
+    // cvGEMM( H_inv, dD, -1, NULL, 0, &X, 0 );
+    double X[3][1] = {{0}, {0}, {0}};
+
+    for(int i = 0; i < 3; i++)
+    {
+        for(int j = 0; j < 1; j++)
+        {
+            for(int k = 0; k < 3; k++)
+                X[i][j] += H_inv[i][k] * dI[k][j];
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // cvReleaseMat( &dD );
+    // cvReleaseMat( &H );
+    // cvReleaseMat( &H_inv );
+
+    // *xi = x[2];
+    // *xr = x[1];
+    // *xc = x[0];
+    
+    *xi = X[2][0];
+    *xr = X[1][0];
+    *xc = X[0][0];
+
 }
+
+//-------------------------------------------------------
+
+// //! Computes the partial derivatives in x, y, and scale of a pixel.
+// double** FastHessian::deriv3D(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b)
+// {
+//     // CvMat* dI;
+//     double** dI;
+//     // double dx, dy, ds;
+
+//     // dx = (m->getResponse(r, c + 1, t) - m->getResponse(r, c - 1, t)) / 2.0;
+//     // dy = (m->getResponse(r + 1, c, t) - m->getResponse(r - 1, c, t)) / 2.0;
+//     // ds = (t->getResponse(r, c) - b->getResponse(r, c, t)) / 2.0;
+    
+//     // dI = cvCreateMat( 3, 1, CV_64FC1 );
+//     // cvmSet( dI, 0, 0, dx );
+//     // cvmSet( dI, 1, 0, dy );
+//     // cvmSet( dI, 2, 0, ds );
+//     // dI = cvCreateMat_rw(3, 1);
+
+//     return dI;
+// }
+
+// //-------------------------------------------------------
+
+// //! Computes the 3D Hessian matrix for a pixel.
+// double** FastHessian::hessian3D(int r, int c, ResponseLayer *t, ResponseLayer *m, ResponseLayer *b)
+// {
+//     double** H;
+//     // double v, dxx, dyy, dss, dxy, dxs, dys;
+
+//     // v = m->getResponse(r, c, t);
+//     // dxx = m->getResponse(r, c + 1, t) + m->getResponse(r, c - 1, t) - 2 * v;
+//     // dyy = m->getResponse(r + 1, c, t) + m->getResponse(r - 1, c, t) - 2 * v;
+//     // dss = t->getResponse(r, c) + b->getResponse(r, c, t) - 2 * v;
+//     // dxy = ( m->getResponse(r + 1, c + 1, t) - m->getResponse(r + 1, c - 1, t) - 
+//     //                 m->getResponse(r - 1, c + 1, t) + m->getResponse(r - 1, c - 1, t) ) / 4.0;
+//     // dxs = ( t->getResponse(r, c + 1) - t->getResponse(r, c - 1) - 
+//     //                 b->getResponse(r, c + 1, t) + b->getResponse(r, c - 1, t) ) / 4.0;
+//     // dys = ( t->getResponse(r + 1, c) - t->getResponse(r - 1, c) - 
+//     //                 b->getResponse(r + 1, c, t) + b->getResponse(r - 1, c, t) ) / 4.0;
+
+//     // H = cvCreateMat( 3, 3, CV_64FC1 );
+//     // cvmSet( H, 0, 0, dxx );
+//     // cvmSet( H, 0, 1, dxy );
+//     // cvmSet( H, 0, 2, dxs );
+//     // cvmSet( H, 1, 0, dxy );
+//     // cvmSet( H, 1, 1, dyy );
+//     // cvmSet( H, 1, 2, dys );
+//     // cvmSet( H, 2, 0, dxs );
+//     // cvmSet( H, 2, 1, dys );
+//     // cvmSet( H, 2, 2, dss );
+
+//     return H;
+// }
 
 //-------------------------------------------------------
