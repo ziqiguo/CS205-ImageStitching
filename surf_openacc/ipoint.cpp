@@ -155,7 +155,7 @@ cv::Mat getCvStitch(IplImage *src, cv::Mat warpped)
 
     cv::Mat msrc = cv::cvarrToMat(src);
 
-    cv::Mat stitched(cv::Size(warpped.cols + msrc.cols,  warpped.rows*2), CV_8UC3, cvScalar(0,0,0));
+    cv::Mat stitched(cv::Size((int)(warpped.cols/2) + msrc.cols,  warpped.rows), CV_8UC3, cvScalar(0,0,0));
 
     cv::Mat roi1(stitched, cv::Rect(0, 0,  msrc.cols, msrc.rows));
     cv::Mat roi2(stitched, cv::Rect(0, 0, warpped.cols, warpped.rows));

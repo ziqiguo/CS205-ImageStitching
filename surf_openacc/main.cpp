@@ -152,8 +152,8 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
         // resize video stream
         if(video_mode)
         {
-            sz.width = resolution_mode;  
-            sz.height = (int)(resolution_mode/9*16);  
+            sz.width = (int)(img_0_ptr->width*1.f*resolution_mode/1080);  
+            sz.height = (int)(img_0_ptr->height*1.f*resolution_mode/1080);  
             desc_0 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);
             desc_1 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);  
             cvResize(img_0_ptr, desc_0, CV_INTER_CUBIC);
@@ -165,8 +165,8 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
         try{
 
             stitch_count++;
-            if(H_count < 20 || H_count % 30 == 1)
-            {
+            // if(H_count < 20 || H_count % 30 == 1)
+            // {
             surfDetDes(img_0_ptr, ipts_0, single_mem_cpy, true, 4, 4, 2, 0.001f);        
             surfDetDes(img_1_ptr, ipts_1, single_mem_cpy, true, 4, 4, 2, 0.001f);        
 
@@ -183,22 +183,22 @@ void featureStitchThread(int single_mem_cpy, int blend_mode, IplImage **img_0, I
             H = findHom(matches);
             end = clock();
             std::cout<< "Homography took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-            }
+            // }
 
             H_count++;
-            if(video_mode)
-            {
-                H_mean = H;
-            }
-            else
-            {
+            // if(video_mode)
+            // {
+            //     H_mean = H;
+            // }
+            // else
+            // {
                 if(H_count == 1)
                     H_mean = H;
                 else
                 {
-                    H_mean = 0.9*H_mean + 0.1*H;
+                    H_mean = 0.7*H_mean + 0.3*H;
                 }   
-            }
+            // }
 
             cv::Mat warpped, mask2;
             std::vector<cv::Mat> warp_mask;
@@ -331,7 +331,7 @@ int mainStream(int single_mem_cpy, int blend_mode, int resolution_mode)
             H = findHom(matches);
             end = clock();
             std::cout<< "Homography took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
-            }
+            // }
             H_count++;
             if(H_count == 1)
                 H_mean = H;
@@ -427,8 +427,8 @@ int mainStreamThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
     //vw << img;
 
     // Create a window 
-    // cvNamedWindow("Camera0", CV_WINDOW_AUTOSIZE );
-    // cvNamedWindow("Camera1", CV_WINDOW_AUTOSIZE );
+    cvNamedWindow("Camera0", CV_WINDOW_AUTOSIZE );
+    cvNamedWindow("Camera1", CV_WINDOW_AUTOSIZE );
     cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE);
 
     // Declare Ipoints and other stuff
@@ -459,20 +459,24 @@ int mainStreamThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
         try{
             imshow_count++;
             start = clock();
-            img_lock.lock();
-            IplImage* display = cvCloneImage(&(IplImage)(*stitched_cpy));
 
-            img_lock.unlock();
+            // img_lock.lock();
+            // IplImage* display = cvCloneImage(&(IplImage)(*stitched_cpy));
+            // img_lock.unlock();
 
-            int fps_count = min(min(stitch_count, capture_count), imshow_count);
-            cout << stitch_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << ", " \
-                        << capture_count*1.f/(clock()-sss)* CLOCKS_PER_SEC\
-                         << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
+            // int fps_count = min(min(stitch_count, capture_count), imshow_count);
+            // cout << stitch_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << ", " \
+            //             << capture_count*1.f/(clock()-sss)* CLOCKS_PER_SEC\
+            //              << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
             // drawFPS_effective(display, 1.f*fps_count/(clock()-sss)* CLOCKS_PER_SEC);
-            drawFPS(display);
-            cvShowImage("stitched", display);
-            cvReleaseImage(&display);
-            // cv::imshow("stitched", *stitched_cpy);
+            // drawFPS(display);
+            // cvShowImage("stitched", display);
+            // cvReleaseImage(&display);
+			img_lock.lock();
+            cv::imshow("stitched", *stitched_cpy);
+            cvShowImage("Camera0", img_0);
+            cvShowImage("Camera1", img_1);
+            img_lock.unlock();
             
             end = clock();
             std::cout<< "Imshow took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;            
@@ -515,6 +519,7 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
     IplImage *img_0_ptr, *img_1_ptr;
     cv::Mat H, stitched, H_mean, *stitched_cpy=NULL;
     IpPairVec matches;
+    CvSize sz;
     clock_t start, end;
 
     int H_count=0, fps_count=0;
@@ -534,6 +539,15 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
             img_0_ptr = img_0;
             img_1_ptr = img_1;
 
+            sz.width = (int)(img_0_ptr->width*1.f*resolution_mode/1080);  
+            sz.height = (int)(img_0_ptr->height*1.f*resolution_mode/1080);  
+            IplImage* desc_0 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);
+            IplImage* desc_1 = cvCreateImage(sz, img_0_ptr->depth, img_0_ptr->nChannels);  
+            cvResize(img_0_ptr, desc_0, CV_INTER_CUBIC);
+            cvResize(img_1_ptr, desc_1, CV_INTER_CUBIC);
+            img_0_ptr = desc_0;
+            img_1_ptr = desc_1;
+
             surfDetDes(img_0_ptr, ipts_0, single_mem_cpy, true, 4, 4, 2, 0.002f);        
             surfDetDes(img_1_ptr, ipts_1, single_mem_cpy, true, 4, 4, 2, 0.002f);        
 
@@ -548,6 +562,8 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
             std::cout<< "Homography took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
             // }
             
+            H_count++;
+
             if(H_count == 1)
                 H_mean = H;
             else
