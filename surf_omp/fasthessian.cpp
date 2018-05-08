@@ -105,7 +105,7 @@ void FastHessian::getIpoints()
 
     int r, c, o, i;
 
-    #pragma omp parallel for private(o,i,r,c,b,m,t) shared(filter_map, ipts)
+    #pragma omp parallel for private(o,i,r,c,b,m,t) shared(filter_map)
     for (o = 0; o < octaves; ++o)
     {
         for (i = 0; i <= 1; ++i)
