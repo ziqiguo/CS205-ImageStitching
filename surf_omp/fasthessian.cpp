@@ -103,24 +103,20 @@ void FastHessian::getIpoints()
     // Get the response layers
     ResponseLayer *b, *m, *t;
 
-    for (int o = 0; o < octaves; ++o) 
+    int r, c, o, i;
+
+    #pragma omp parallel for private(o,i,r,c,b,m,t) shared(filter_map, ipts)
+    for (o = 0; o < octaves; ++o)
     {
-        for (int i = 0; i <= 1; ++i)
+        for (i = 0; i <= 1; ++i)
         {
             b = responseMap.at(filter_map[o][i]);
             m = responseMap.at(filter_map[o][i+1]);
             t = responseMap.at(filter_map[o][i+2]);
 
-            // Ipoint ipts_tmp[t->height][t->width];
-            // int changed[t->height][t->width];
-
-            // loop over middle response layer at density of the most 
-            // sparse layer (always top), to find maxima across scale and space
-
-            
-            for (int r = 0; r < t->height; ++r)
+            for (r = 0; r < t->height; ++r)
             {
-                for (int c = 0; c < t->width; ++c)
+                for (c = 0; c < t->width; ++c)
                 {
                     if (isExtremum(r, c, t, m, b))
                     {
@@ -326,6 +322,7 @@ void FastHessian::interpolateExtremum(int r, int c, ResponseLayer *t, ResponseLa
         ipt.y = static_cast<float>((r + xr) * t->step);
         ipt.scale = static_cast<float>((0.1333f) * (m->filter + xi * filterStep));
         ipt.laplacian = static_cast<int>(m->getLaplacian(r,c,t));
+        #pragma omp critical
         ipts.push_back(ipt);
         // *ipts_tmp = ipt;
         // *changed = 1;

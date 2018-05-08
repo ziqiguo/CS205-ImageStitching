@@ -83,11 +83,13 @@ void Surf::getDescriptors(bool upright)
         float rx = 0.f, ry = 0.f, rrx = 0.f, rry = 0.f, len = 0.f;
         float cx = -0.5f, cy = 0.f; //Subregion centers for the 4x4 gaussian weighting
         int row_, column_, s_;
+        int index;
 
     
         {
 
-        for (int index = 0; index < ipts_size; ++index)
+        #pragma omp parallel for private(index) shared(scale_arr, x_arr, y_arr, img_data, img_step, img_height, img_width)
+        for (index = 0; index < ipts_size; ++index)
         {
             // Extract upright (i.e. not rotation invariant) descriptors
             // getDescriptor(true, i);
