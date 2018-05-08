@@ -488,8 +488,8 @@ int mainStreamThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
 int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
 {
     CvCapture* capture_0, *capture_1;
-    capture_0 = cvCaptureFromAVI("../videos/video_left.mov");
-    capture_1 = cvCaptureFromAVI("../videos/video_right.mov");
+    capture_0 = cvCaptureFromAVI("../videos/video_left.mp4");
+    capture_1 = cvCaptureFromAVI("../videos/video_right.mp4");
 
     if(!capture_0 || !capture_1)
         throw "Error when reading videos";
@@ -627,8 +627,8 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
 int mainVideoThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
 {
     CvCapture* capture_0, *capture_1;
-    capture_0 = cvCaptureFromAVI("../videos/video_left.mov");
-    capture_1 = cvCaptureFromAVI("../videos/video_right.mov");
+    capture_0 = cvCaptureFromAVI("../videos/video_left.mp4");
+    capture_1 = cvCaptureFromAVI("../videos/video_right.mp4");
 
     if(!capture_0 || !capture_1)
         throw "Error when reading videos";
