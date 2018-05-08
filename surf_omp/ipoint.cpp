@@ -12,6 +12,9 @@ void getMatches(IpVec &ipts1, IpVec &ipts2, IpPairVec &matches)
 
     matches.clear();
 
+    unsigned int i, j;
+
+    
     for(unsigned int i = 0; i < ipts1.size(); i++) 
     {
         d1 = d2 = FLT_MAX;
@@ -38,6 +41,7 @@ void getMatches(IpVec &ipts1, IpVec &ipts2, IpPairVec &matches)
             // Store the change in position
             ipts1[i].dx = match->x - ipts1[i].x; 
             ipts1[i].dy = match->y - ipts1[i].y;
+            #pragma omp critical
             matches.push_back(std::make_pair(ipts1[i], *match));
         }
     }
@@ -101,8 +105,11 @@ cv::Mat getWarpped(IplImage *original, cv::Mat H)
     cv::Mat warp(h, w*2, CV_8UC3, cvScalar(0,0,0));
     //cv::Mat mask = cv::Mat::zeros(warp.size(), CV_32SC1);
 
-    for(int i = 0; i < h; ++i) {
-        for(int j = 0; j < w; ++j) {
+    int i, j;
+
+    #pragma omp parallel for private(i, j) shared(H, src, warp, h, w)
+    for(i = 0; i < h; ++i) {
+        for(j = 0; j < w; ++j) {
 
             double z = 1. / (H.at<double>(2, 0) * j + H.at<double>(2, 1) * i + H.at<double>(2, 2));
             double x = (H.at<double>(0, 0) * j + H.at<double>(0, 1) * i + H.at<double>(0, 2)) * z;
