@@ -47,16 +47,9 @@ int mainStitch(int single_mem_cpy, int blend_mode)
     IplImage *img_0, *img_1;
     cv::Mat warpped, stitched, mask2;
     std::vector<cv::Mat> warp_mask;
-    // img1 = cvLoadImage("../images/img1.jpg");
-    // img2 = cvLoadImage("../images/img2.jpg");
+    
     img_0 = cvLoadImage("../images/web0.jpg");
     img_1 = cvLoadImage("../images/web1.jpg");
-
-    // CvCapture* capture_0 = cvCaptureFromCAM(0);
-    // CvCapture* capture_1 = cvCaptureFromCAM(1);
-
-    // img1 = cvQueryFrame(capture_1);
-    // img2 = cvQueryFrame(capture_0);
 
     clock_t start = clock();
     IpVec ipts1, ipts2;
@@ -252,19 +245,11 @@ int mainStream(int single_mem_cpy, int blend_mode, int resolution_mode)
     cvSetCaptureProperty(capture_0, CV_CAP_PROP_FRAME_WIDTH, (int)(resolution_mode/9*16));
     cvSetCaptureProperty(capture_1, CV_CAP_PROP_FRAME_HEIGHT, resolution_mode);
     cvSetCaptureProperty(capture_1, CV_CAP_PROP_FRAME_WIDTH, (int)(resolution_mode/9*16));
-    // cvSetCaptureProperty(capture_0, CV_CAP_PROP_FRAME_HEIGHT, 720);
-    // cvSetCaptureProperty(capture_0, CV_CAP_PROP_FRAME_WIDTH, 1280);
-    // cvSetCaptureProperty(capture_1, CV_CAP_PROP_FRAME_HEIGHT, 720);
-    // cvSetCaptureProperty(capture_1, CV_CAP_PROP_FRAME_WIDTH, 1280);
 
     if(!capture_0) 
         error("No Capture Camera 0");
     if(!capture_1)
         error("No Capture Camera 1");
-
-    // Initialise video writer
-    //cv::VideoWriter vw("c:\\out.avi", CV_FOURCC('D','I','V','X'),10,cvSize(320,240),1);
-    //vw << img;
 
     // Create a window 
     // cvNamedWindow("Camera0", CV_WINDOW_AUTOSIZE );
@@ -377,7 +362,6 @@ int mainStream(int single_mem_cpy, int blend_mode, int resolution_mode)
             //              << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
             
             drawFPS(display);
-            // drawFPS_effective(display, 1.f*fps_count/(clock()-sss)* CLOCKS_PER_SEC);
             cvShowImage("stitched", display);
             cvReleaseImage(&display);
             // cv::imshow("stitched", *stitched_cpy);
@@ -468,7 +452,6 @@ int mainStreamThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
             // cout << stitch_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << ", " \
             //             << capture_count*1.f/(clock()-sss)* CLOCKS_PER_SEC\
             //              << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
-            // drawFPS_effective(display, 1.f*fps_count/(clock()-sss)* CLOCKS_PER_SEC);
             // drawFPS(display);
             // cvShowImage("stitched", display);
             // cvReleaseImage(&display);
@@ -608,7 +591,6 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
             //              << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
             
             drawFPS(display);
-            // drawFPS_effective(display, 1.f*fps_count/(clock()-sss)* CLOCKS_PER_SEC);
             cvShowImage("stitched", display);
             cvReleaseImage(&display);
             // cv::imshow("stitched", *stitched_cpy);
@@ -684,7 +666,6 @@ int mainVideoThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
                          << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
             
             drawFPS(display);
-            // drawFPS_effective(display, 1.f*fps_count/(clock()-sss)* CLOCKS_PER_SEC);
             cvShowImage("stitched", display);
             cvReleaseImage(&display);
             // cv::imshow("stitched", *stitched_cpy);

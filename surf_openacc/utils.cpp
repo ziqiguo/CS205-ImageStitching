@@ -245,26 +245,6 @@ void drawWindows(IplImage *img, vector<Ipoint> &ipts)
 
 //-------------------------------------------------------
 
-// Draw the FPS figure on the image (requires at least 2 calls)
-void drawFPS_real(IplImage *img, float fps)
-{
-    static int counter = 0;
-    static clock_t t;
-    // static float fps;
-    char fps_text[20];
-    CvFont font;
-    cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX|CV_FONT_ITALIC, 1.0,1.0,0,2);
-
-    // Increment counter
-    ++counter;
-
-    // Get the figure as a string
-    sprintf(fps_text,"FPS: %.2f",fps);
-
-    // Draw the string on the image
-    cvPutText (img,fps_text,cvPoint(10,25), &font, cvScalar(255,255,0));
-}
-
 void drawFPS(IplImage *img)
 {
     static int counter = 0;
