@@ -273,7 +273,7 @@ int mainVideo(int blend_mode, int resolution_mode)
 
     int H_count=0, fps_count=0;
 
-    cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE);
+    // cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE);
     clock_t sss = clock_t();
     while(1) 
     {  
@@ -346,9 +346,9 @@ int mainVideo(int blend_mode, int resolution_mode)
             imshow_count++;
 
             start = clock();
-            img_lock.lock();
+            // img_lock.lock();
             IplImage* display = cvCloneImage(&(IplImage)stitched);
-            img_lock.unlock();
+            // img_lock.unlock();
 
             int fps_count = min(min(stitch_count, capture_count), imshow_count);
 
@@ -358,7 +358,7 @@ int mainVideo(int blend_mode, int resolution_mode)
             
             drawFPS(display);
             // drawFPS_effective(display, 1.f*fps_count/(clock()-sss)* CLOCKS_PER_SEC);
-            cvShowImage("stitched", display);
+            // cvShowImage("stitched", display);
             cvReleaseImage(&display);
             // cv::imshow("stitched", *stitched_cpy);
             end = clock();
@@ -378,7 +378,7 @@ int mainVideo(int blend_mode, int resolution_mode)
     THREAD_EXIT_FLAG = true;
     cvReleaseCapture(&capture_0);
     cvReleaseCapture(&capture_1);
-    cvDestroyWindow("stitched");
+    // cvDestroyWindow("stitched");
     return 0;
 }
 

@@ -88,7 +88,7 @@ void Surf::getDescriptors(bool upright)
     
         {
 
-        #pragma omp parallel for private(index) shared(scale_arr, x_arr, y_arr, img_data, img_step, img_height, img_width)
+        #pragma omp parallel for private(index) shared(scale_arr, x_arr, y_arr,img_data, img_step, img_height, img_width)
         for (index = 0; index < ipts_size; ++index)
         {
             // Extract upright (i.e. not rotation invariant) descriptors
@@ -110,6 +110,7 @@ void Surf::getDescriptors(bool upright)
             i = -8;
 
             //Calculate descriptor for this interest point
+            #pragma omp critical
             while(i < 12)
             {
                 j = -8;
@@ -117,7 +118,7 @@ void Surf::getDescriptors(bool upright)
 
                 cx += 1.f;
                 cy = -0.5f;
-
+		
                 while(j < 12) 
                 {
                     dx=dy=mdx=mdy=0.f;
@@ -130,9 +131,9 @@ void Surf::getDescriptors(bool upright)
 
                     xs = fRound(x + ( -jx*scale*si + ix*scale*co));
                     ys = fRound(y + ( jx*scale*co + ix*scale*si));
-
+		    
                     for (int k = i; k < i + 9; ++k) 
-                    {
+                    {	
                         for (int l = j; l < j + 9; ++l) 
                         {
                             //Get coords of sample point on the rotated axis

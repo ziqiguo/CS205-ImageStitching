@@ -107,7 +107,7 @@ cv::Mat getWarpped(IplImage *original, cv::Mat H)
 
     int i, j;
 
-    #pragma omp parallel for private(i, j) shared(H, src, warp, h, w)
+    // #pragma omp parallel for private(i, j) shared(H, src, warp, h, w)
     for(i = 0; i < h; ++i) {
         for(j = 0; j < w; ++j) {
 
