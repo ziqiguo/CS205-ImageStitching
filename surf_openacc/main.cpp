@@ -491,7 +491,6 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
     capture_0 = cvCaptureFromAVI("../videos/video_left.mov");
     capture_1 = cvCaptureFromAVI("../videos/video_right.mov");
 
-    
     if(!capture_0 || !capture_1)
         throw "Error when reading videos";
 
@@ -507,6 +506,11 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
 
     int H_count=0, fps_count=0;
 
+    int width = (int)cvGetCaptureProperty(capture_0, CV_CAP_PROP_FRAME_WIDTH);
+  	int height = (int)cvGetCaptureProperty(capture_0, CV_CAP_PROP_FRAME_HEIGHT);
+  	double fps = cvGetCaptureProperty(capture_0, CV_CAP_PROP_FPS);
+    CvVideoWriter *writer=NULL;
+
     cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE);
     clock_t sss = clock_t();
     while(1) 
@@ -519,6 +523,9 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
 
             img_0 = cvQueryFrame(capture_0);
             img_1 = cvQueryFrame(capture_1);
+
+            if(img_0==NULL || img_1==NULL)
+            	break;
             img_0_ptr = img_0;
             img_1_ptr = img_1;
 
@@ -585,18 +592,18 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
             img_lock.unlock();
 
             int fps_count = min(min(stitch_count, capture_count), imshow_count);
-
-            // cout << stitch_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << ", " \
-            //             << capture_count*1.f/(clock()-sss)* CLOCKS_PER_SEC\
-            //              << ", " << imshow_count*1.f/(clock()-sss)* CLOCKS_PER_SEC << endl;
             
-            drawFPS(display);
-            cvShowImage("stitched", display);
-            cvReleaseImage(&display);
-            // cv::imshow("stitched", *stitched_cpy);
+            cv::imshow("stitched", stitched);
             end = clock();
             std::cout<< "Imshow took: " << float(end - start) / CLOCKS_PER_SEC << std::endl;            
             std::cout << "----------------------------------------------" << endl;
+
+            if(writer == NULL)
+            {
+            	CvSize size = cvSize(display->width, display->height);
+            	writer = cvCreateVideoWriter("CamCapture.avi", CV_FOURCC('M','J','P','G'), fps, size, 1);
+            }
+            cvWriteFrame(writer, display);
         }
         catch(cv::Exception& e)
         {   
@@ -611,6 +618,7 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
     THREAD_EXIT_FLAG = true;
     cvReleaseCapture(&capture_0);
     cvReleaseCapture(&capture_1);
+    cvReleaseVideoWriter(&writer);
     cvDestroyWindow("stitched");
     return 0;
 }
