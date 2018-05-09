@@ -445,8 +445,8 @@ int main(int argc, char* argv[])
             return mainImage(src.c_str());
 
         case 1 : // run static image match between a pair of images
-            if (src1 == "") src1 = "../images/web0.jpg"; // if not provided, use sample image
-            if (src2 == "") src2 = "../images/web1.jpg"; // if not provided, use sample image
+            if (src1 == "") src1 = "../images/1.png"; // if not provided, use sample image
+            if (src2 == "") src2 = "../images/2.png"; // if not provided, use sample image
             return mainStitch(blend_mode, src1.c_str(), src2.c_str());
 
         case 2 : // run image stitching with webcam stream
