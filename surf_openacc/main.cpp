@@ -7,20 +7,22 @@
 #include <queue>
 #include <mutex>
 #include <opencv2/opencv.hpp>
+#include <getopt.h>
 
 std::mutex img_lock;
 
 int THREAD_EXIT_FLAG = false;
-int capture_count=0;
-int imshow_count=0;
-int stitch_count=0;
+int capture_count = 0;
+int imshow_count = 0;
+int stitch_count = 0;
 
-int mainImage(int single_mem_cpy)
+
+int mainImage(int single_mem_cpy, const char* src)
 {
     // Declare Ipoints and other stuff
     IpVec ipts;
     // IplImage *img=cvLoadImage("../images/img1.jpg");
-    IplImage *img=cvLoadImage("../images/1.png");
+    IplImage *img=cvLoadImage(src);
     
 
     // Detect and describe interest points in the image
@@ -42,14 +44,15 @@ int mainImage(int single_mem_cpy)
 }
 
 
-int mainStitch(int single_mem_cpy, int blend_mode)
+int mainStitch(int single_mem_cpy, int blend_mode,
+               const char* src1, const char* src2)
 {
     IplImage *img_0, *img_1;
     cv::Mat warpped, stitched, mask2;
     std::vector<cv::Mat> warp_mask;
     
-    img_0 = cvLoadImage("../images/web0.jpg");
-    img_1 = cvLoadImage("../images/web1.jpg");
+    img_0 = cvLoadImage(src1);
+    img_1 = cvLoadImage(src2);
 
     clock_t start = clock();
     IpVec ipts1, ipts2;
@@ -485,11 +488,12 @@ int mainStreamThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
 
 
 
-int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
+int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode,
+              const char* src1, const char* src2)
 {
     CvCapture* capture_0, *capture_1;
-    capture_0 = cvCaptureFromAVI("../videos/video_left.mp4");
-    capture_1 = cvCaptureFromAVI("../videos/video_right.mp4");
+    capture_0 = cvCaptureFromAVI(src1);
+    capture_1 = cvCaptureFromAVI(src2);
 
     if(!capture_0 || !capture_1)
         throw "Error when reading videos";
@@ -624,11 +628,12 @@ int mainVideo(int single_mem_cpy, int blend_mode, int resolution_mode)
 }
 
 
-int mainVideoThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
+int mainVideoThreaded(int single_mem_cpy, int blend_mode, int resolution_mode, 
+                      const char* src1, const char* src2)
 {
     CvCapture* capture_0, *capture_1;
-    capture_0 = cvCaptureFromAVI("../videos/video_left.mp4");
-    capture_1 = cvCaptureFromAVI("../videos/video_right.mp4");
+    capture_0 = cvCaptureFromAVI(src1);
+    capture_1 = cvCaptureFromAVI(src2);
 
     if(!capture_0 || !capture_1)
         throw "Error when reading videos";
@@ -704,26 +709,91 @@ int mainVideoThreaded(int single_mem_cpy, int blend_mode, int resolution_mode)
 
 int main(int argc, char* argv[]) 
 {
-    // run SURF on a single image
-    if(atoi(argv[1]) == 0)
-        return mainImage(atoi(argv[3]));
+    int debug_flag, compile_flag, size_in_bytes;
 
-    // run static image match between a pair of images
-    if(atoi(argv[1]) == 1)
-        return mainStitch(atoi(argv[3]), atoi(argv[4]));
+    static struct option longopts[] =
+    {
+        {"mode", required_argument, NULL, 'm'},
+        {"single_mem_cpy", no_argument, NULL, 's'},
+        {"blend_mode", no_argument, NULL, 'b'},
+        {"threaded", no_argument, NULL, 't'},
+        {"resolution", required_argument, NULL, 'r'},
+        {"src", required_argument, NULL, 'S'}, // single src file
+        {"src1", required_argument, NULL, 'L'}, // left src file
+        {"src2", required_argument, NULL, 'R'}, // right src file
+        {NULL, 0, NULL, 0}
+    };
+    
+    int idx = 0;
+    char c;
+    int mode = -1, blend_mode = 0, single_mem_cpy = 0, threaded = 0, resolution_mode = 480;
+    std::string src = "", src1 = "", src2 = "";
+    
+    while((c = getopt_long(argc, argv, "m:sbtr:S:L:R:", longopts, &idx)) != -1)
+    {
+        switch (c)
+        {
+            case 'm':
+                mode = atoi(optarg);
+                break;
+            case 's':
+                single_mem_cpy = 1;
+                break;
+            case 'b':
+                blend_mode = 1;
+                break;
+            case 't':
+                threaded = atoi(optarg);
+                break;
+            case 'r':
+                resolution_mode = atoi(optarg);
+                break;
+            case 'S':
+                src = optarg;
+                break;
+            case 'L':
+                src1 = optarg;
+                break;
+            case 'R':
+                src2 = optarg;
+                break;
+        }
+    }
+    // Check mandatory parameters:
+    if (mode == -1) {
+        printf("Mode (-m) option is mandatory\n");
+        exit(1);
+    }
 
-    // run image stitching with webcam stream
-    if(atoi(argv[1]) == 2)
-        if(atoi(argv[2]) == 0)
-            return mainStream(atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
-        else
-            return mainStreamThreaded(atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
+    switch (mode)
+    {
+        case 0 : // run SURF on a single image
+            if(src == "") src = "../images/1.png"; // if not provided, use sample image
+            return mainImage(single_mem_cpy, src.c_str());
 
-    // run image stitching with local video files
-    if(atoi(argv[1]) == 3)
-        if(atoi(argv[2]) == 0)
-            return mainVideo(atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
-        else
-            return mainVideoThreaded(atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
+        case 1 : // run static image match between a pair of images
+            if (src1 == "") src1 = "../images/web0.jpg"; // if not provided, use sample image
+            if (src2 == "") src2 = "../images/web1.jpg"; // if not provided, use sample image
+            return mainStitch(single_mem_cpy, blend_mode, src1.c_str(), src2.c_str());
 
+        case 2 : // run image stitching with webcam stream
+            if (!threaded)
+                return mainStream(single_mem_cpy, blend_mode, resolution_mode);
+            else
+                return mainStreamThreaded(single_mem_cpy, blend_mode, resolution_mode);
+                
+        case 3 : // run image stitching with local video files
+            if (src1 == "") src1 = "../videos/video_left.mp4"; // if not provided, use sample video
+            if (src2 == "") src2 = "../videos/video_right.mp4"; // if not provided, use sample video
+            if (!threaded)
+                return mainVideo(single_mem_cpy, blend_mode, resolution_mode, 
+                                 src1.c_str(), src2.c_str());
+            else
+                return mainVideoThreaded(single_mem_cpy, blend_mode, resolution_mode, 
+                                         src1.c_str(), src2.c_str());
+
+        default : 
+            printf("Mode (-m) option should be an integer between 0 - 3\n");
+            exit(1);
+    }
 }
