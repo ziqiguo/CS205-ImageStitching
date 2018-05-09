@@ -1,17 +1,21 @@
-Compile on Ubuntu:
+## OpenACC Version
+### Compile the Code
+The OpenACC version can only be compiled and run on a device with GPU. Before compiling, set the environment with `source env.sh`.
 
-To compile without GPU: g++ -std=c++11 -fpermissive -pthread -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+#### On machine with GTX GPU, compile with: 
 
-On machine with GTX GPU, compile with: pgc++ -acc -ta=tesla:cc60 -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs` 
+```
+pgc++ -acc -ta=tesla:cc60 -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+```
 
-On machine with Tesla GPU, compile with: pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs` 
+#### On machine with Tesla GPU, compile with: 
 
-=======
+```
+pgc++ -acc -ta=tesla -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+```
 
-Compile on MacOS:
-g++-7 -std=c++11 -fpermissive -pthread -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+### Run the Code
 
-### Run:
 ``./test -m <mode> [...]``
 
 **Argument Options** (< > after flag indicates argument is required)
@@ -37,9 +41,10 @@ g++-7 -std=c++11 -fpermissive -pthread -O3 -o test main.cpp fasthessian.cpp inte
 
 - -t | --threaded: (OpenACC only)
 
-	- if set, one single mem copy; otherwise, do memory copy from host to device every response layer
+	- if set, using the multi-threading version for task-level parallelization
 
 - -S/L/R | --src/src1/src2 <path>
          
 	- <path> path of  image/video to be processed. For mode 0, `-S|--src` will be used for single image feature extraction; for mode 1 and mode 3, `-LR|--src1 --src2` will be used for image/video stitching from local files
+
 	- if flags are not set, will use sample image/video given by this repository
