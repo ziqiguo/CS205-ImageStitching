@@ -94,7 +94,7 @@ pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.
          
   - if set, run blending algorithm with stitching; otherwise, run regular stitching algorithm
 
-- -r | --resolution (for mode:
+- -r | --resolution (for mode 2 and 3 only):
 
   - user-specified resolution
 
@@ -115,12 +115,45 @@ pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.
 
 ## Examples
 
-##### Mode 0: Keypoint Detection on a Single Image
+#### Mode 0: Run SURF on a single image
 
-| Input image                  | Output image                         |
-| ---------------------------- | ------------------------------------ |
-| ![input](images/1.png =100x) | ![output](images/stitched.png =100x) |
+- Command: `./test -m 0`
 
+- Input image:
+
+![](images/1.png)
+
+- Output image:
+
+![](images/surf.png)
+
+
+
+#### Mode 1: Run static image match between a pair of images
+
+- Command: 
+
+| Input image 1     | Input image 2     |
+| ----------------- | ----------------- |
+| ![](images/1.png) | ![](images/2.png) |
+
+- Output image:
+
+![](images/stitched.png)
+
+
+
+#### Mode 2: Run image stitching with webcam stream
+
+##### 720P, single memory copy:
+
+- Command: `./test -m 2 -r 720 -s`
+- Demo: https://youtu.be/DG2lm59jOk8 
+
+##### 720P, single memory copy, with blending:
+
+- Command: `./test -m 2 -r 720 -s -b`
+- Demo: https://youtu.be/PLp8XQtipk0
 
 
 
