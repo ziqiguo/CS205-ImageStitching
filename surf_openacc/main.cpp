@@ -93,6 +93,7 @@ int mainStitch(int single_mem_cpy, int blend_mode,
 
     cvNamedWindow("stitched", CV_WINDOW_AUTOSIZE );
     cv::imshow("stitched", stitched);
+    imwrite("stitched.jpg", stitched);
     cvWaitKey(0);
 
     return 0;

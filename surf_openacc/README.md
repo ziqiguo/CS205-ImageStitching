@@ -46,4 +46,5 @@ pgc++ -acc -ta=tesla -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp inte
 - -S/L/R | --src/src1/src2 <path>
          
 	- <path> path of  image/video to be processed. For mode 0, `-S|--src` will be used for single image feature extraction; for mode 1 and mode 3, `-LR|--src1 --src2` will be used for image/video stitching from local files
+
 	- if flags are not set, will use sample image/video given by this repository
