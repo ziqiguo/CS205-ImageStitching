@@ -1,3 +1,3 @@
 #!/bin/bash
 ./test -m 1
-diff stitched.jpg stitched_test.jpg
+compare -metric MAE stitched.jpg stitched_test.jpg null:
