@@ -42,4 +42,4 @@ In this project, we want to use big compute techniques to parallelize the algori
   - Keypoint detection: [Speed-Up Robust Features (SURF)](http://www.vision.ee.ethz.ch/~surf/eccv06.pdf)
   - Transformation estimation: [Random Sample Consensus (RANSAC)](http://www.cse.yorku.ca/~kosta/CompVis_Notes/ransac.pdf)
   - Perspective warping: https://github.com/stheakanath/panorama
-  - Blending: Multi-band Blending
+  - Blending: Multi-band Blending: [A Multiresolution Spline With Application to Image Mosaics](http://persci.mit.edu/pub_pdfs/spline83.pdf)
