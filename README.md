@@ -26,8 +26,9 @@ In this project, we want to use big compute techniques to parallelize the algori
 
 
 ### Compile Dependencies:
-
-**TODO**
+- GCC
+- OpenCV
+- pkg-config
 
 ### Compile:
 

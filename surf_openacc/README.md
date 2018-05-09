@@ -2,13 +2,13 @@
 ### Compile the Code
 The OpenACC version can only be compiled and run on a device with GPU.
 
-On machine with GTX GPU, compile with: 
+#### On machine with GTX GPU, compile with: 
 
 ```
 pgc++ -acc -ta=tesla:cc60 -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 ```
 
-On machine with Tesla GPU, compile with: 
+#### On machine with Tesla GPU, compile with: 
 
 ```
 pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
