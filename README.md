@@ -17,20 +17,83 @@ Team members: Weihang Zhang, Xuefeng Peng, Jiacheng Shi, Ziqi Guo
 
 (source: http://www.arcsoft.com/technology/stitching.html)
 
-In this project, we want to use big compute techniques to parallelize the algorithms of image stitching, so that we can stream videos from adjascent camera into a single panoramic view.
+In this project, we want to use big compute techniques to parallelize the algorithms of image stitching, so that we can stream videos from adjacent camera into a single panoramic view.
 
 
 
 ## Instructions
 
+
+
 ### Compile Dependencies:
+
+#### <TODO>
 
 ### Compile:
 
+*cd* to one of the **surf_sequential/**, **surf_omp/**, or **surf_openacc/** folders before compile your code.
+
+#### MacOS: 
+``g++-7 -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+
+#### Ubuntu: 
+
+** Sequential & Open MP **
+
+``g++ -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+
+** OpenACC **
+
+To compile without GPU: 
+
+``g++ -std=c++11 -fpermissive -pthread -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+
+On machine with GTX GPU, compile with: 
+
+``pgc++ -acc -ta=tesla:cc60 -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+
+On machine with Tesla GPU, compile with: 
+
+``pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+
+
 ### Run Test Cases:
+
+#### <TODO>
 
 ### Run:
 
+``./test -m <mode> [...]``
+
+**Argument Options** (< > after flag indicates argument is required)
+
+- -m | --mode < >: 
+
+	- 0: run SURF on a single image
+	- 1: run static image match between a pair of images
+	- 2: run image stitching with webcam stream
+        - 3: run image stitching with local video files
+
+- -b | --blend_mode: (no additional argument)
+         
+	- if set, run blending algorithm with stitching; otherwise, run regular stitching algorithm
+
+- -r | --resolution < >:
+
+	- user-specified resolution
+
+- -s | --single\_mem\_cpy: (OpenACC only)
+
+	- if set, one single mem copy; otherwise, do memory copy from host to device every response layer
+
+- -t | --threaded: (OpenACC only)
+
+	- if set, one single mem copy; otherwise, do memory copy from host to device every response layer
+
+- -S/L/R | --src/src1/src2 <path>
+         
+	- <path> path of  image/video to be processed. For mode 0, `-S|--src` will be used for single image feature extraction; for mode 1 and mode 3, `-LR|--src1 --src2` will be used for image/video stitching from local files
+	- if flags are not set, will use sample image/video given by this repository
 
 
 ## References
