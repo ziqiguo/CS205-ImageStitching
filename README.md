@@ -27,7 +27,7 @@ In this project, we want to use big compute techniques to parallelize the algori
 
 ### Compile Dependencies:
 
-#### <TODO>
+**TODO**
 
 ### Compile:
 
@@ -68,7 +68,7 @@ pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.
 
 ### Run Test Cases:
 
-#### <TODO>
+**TODO**
 
 ### Run:
 
