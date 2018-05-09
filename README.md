@@ -36,39 +36,54 @@ In this project, we want to use big compute techniques to parallelize the algori
 
 `cd` to one of the **surf_sequential/**, **surf_omp/**, or **surf_openacc/** folders before compiling your code.
 
-#### MacOS:
+
+
+#### Sequential Version
+
+##### MacOS:
 ```
 g++-7 -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 ```
+Adapt `g++-7` to the version of g++.
 
-#### Ubuntu: 
-
-** Sequential & Open MP **
+##### Ubuntu: 
 
 ```
 g++ -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 ```
 
-** OpenACC **
 
-To compile without GPU: 
+#### OpenMP Version
+
+##### MacOS:
 
 ```
-g++ -std=c++11 -fpermissive -pthread -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+g++-7 -fopenmp -std=c++11 -fpermissive -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 ```
+Adapt `g++-7` to the version of g++.
 
-On machine with GTX GPU, compile with: 
+##### Ubuntu:
+
+```
+g++ -fopenmp -std=c++11 -fpermissive -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+```
+##### 
+
+#### OpenACC Version
+
+The OpenACC version can only be compiled and run on a device with GPU. Before compiling, set the environment with `source env.sh`.
+
+##### Machine with GTX GPU: 
 
 ```
 pgc++ -acc -ta=tesla:cc60 -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 ```
 
-On machine with Tesla GPU, compile with: 
+##### Machine with Tesla GPU: 
 
 ```
-pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+pgc++ -acc -ta=tesla -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 ```
-
 
 
 ### Run Test Cases:
@@ -139,7 +154,7 @@ pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.
 
 - Output image:
 
-![](images/stitched.png)
+![](images/stitched_test.jpg)
 
 
 

@@ -1,7 +1,6 @@
 ## Sequential Version
 ### Compile the Code
 #### Compile on Ubuntu:
-
 ```
 g++ -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 ```
