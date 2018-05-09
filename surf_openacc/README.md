@@ -48,3 +48,13 @@ pgc++ -acc -ta=tesla -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp inte
 	- <path> path of  image/video to be processed. For mode 0, `-S|--src` will be used for single image feature extraction; for mode 1 and mode 3, `-LR|--src1 --src2` will be used for image/video stitching from local files
 
 	- if flags are not set, will use sample image/video given by this repository
+
+### Test (On linux)
+
+Before running test.sh, make sure to have the following tool installed(required to check images difference percentage):
+``sudo apt-get install imagemagick imagemagick-doc``
+
+Run:
+``sh sample_test.sh``
+The test shell script will run our simple test through
+The imagemagick comparing tool inside should give an output of well under 150(indicating less than 150 pixels differs due to the randomness of the algorithm).
