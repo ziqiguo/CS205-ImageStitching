@@ -56,5 +56,5 @@ Before running test.sh, make sure to have the following tool installed(required 
 
 Run:
 ``sh sample_test.sh``
-The test shell script will run our simple test through
-The imagemagick comparing tool inside should give an output of well under 150(indicating less than 150 pixels differs due to the randomness of the algorithm).
+The test shell script will run our simple test through our simplest image stitching option, pop up the live view of stitched image. Pressing ``Esc`` button will exit the live view and save the image to file 'stitched.jpg'.
+Then the imagemagick comparing tool inside should give an output of well under 150(indicating less than 150 pixels differs due to the randomness of the algorithm).
