@@ -34,28 +34,37 @@ In this project, we want to use big compute techniques to parallelize the algori
 *cd* to one of the **surf_sequential/**, **surf_omp/**, or **surf_openacc/** folders before compile your code.
 
 #### MacOS: 
-``g++-7 -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+```
+g++-7 -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+```
 
 #### Ubuntu: 
 
 ** Sequential & Open MP **
 
-``g++ -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+```
+g++ -std=c++11 -fpermissive -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+```
 
 ** OpenACC **
 
 To compile without GPU: 
 
-``g++ -std=c++11 -fpermissive -pthread -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+```
+g++ -std=c++11 -fpermissive -pthread -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+```
 
 On machine with GTX GPU, compile with: 
 
-``pgc++ -acc -ta=tesla:cc60 -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
+```
+pgc++ -acc -ta=tesla:cc60 -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+```
 
 On machine with Tesla GPU, compile with: 
 
-``pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs```
-
+```
+pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
+```
 
 ### Run Test Cases:
 
