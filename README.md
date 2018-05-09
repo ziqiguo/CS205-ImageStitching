@@ -30,6 +30,8 @@ In this project, we want to use big compute techniques to parallelize the algori
 - OpenCV 3.4.0 or higher
 - pkg-config
 
+
+
 ### Compile:
 
 `cd` to one of the **surf_sequential/**, **surf_omp/**, or **surf_openacc/** folders before compiling your code.
@@ -67,9 +69,13 @@ On machine with Tesla GPU, compile with:
 pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp integral.cpp ipoint.cpp surf.cpp utils.cpp `pkg-config opencv --cflags --libs`
 ```
 
+
+
 ### Run Test Cases:
 
 **TODO**
+
+
 
 ### Run:
 
@@ -79,31 +85,43 @@ pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.
 
 - -m | --mode < >: 
 
-	- 0: run SURF on a single image
-	- 1: run static image match between a pair of images
-	- 2: run image stitching with webcam stream
-    - 3: run image stitching with local video files
+  - 0: run SURF on a single image
+  - 1: run static image match between a pair of images
+  - 2: run image stitching with webcam stream
+  - 3: run image stitching with local video files
 
 - -b | --blend_mode: (no additional argument)
          
-	- if set, run blending algorithm with stitching; otherwise, run regular stitching algorithm
+  - if set, run blending algorithm with stitching; otherwise, run regular stitching algorithm
 
 - -r | --resolution (for mode:
 
-	- user-specified resolution
+  - user-specified resolution
 
 - -s | --single\_mem\_cpy: (OpenACC only)
 
-	- if set, one single mem copy; otherwise, do memory copy from host to device every response layer
+  - if set, one single mem copy; otherwise, do memory copy from host to device every response layer
 
 - -t | --threaded: (OpenACC only)
 
-	- if set, using the multi-threading version for task-level parallelization
+  - if set, using the multi-threading version for task-level parallelization
 
 - -S/L/R | --src/src1/src2 <path>
          
-	- <path> path of  image/video to be processed. For mode 0, `-S|--src` will be used for single image feature extraction; for mode 1 and mode 3, `-LR|--src1 --src2` will be used for image/video stitching from local files
-	- if flags are not set, will use sample image/video given by this repository
+  - <path> path of  image/video to be processed. For mode 0, `-S|--src` will be used for single image feature extraction; for mode 1 and mode 3, `-LR|--src1 --src2` will be used for image/video stitching from local files
+  - if flags are not set, will use sample image/video given by this repository
+
+
+
+## Examples
+
+##### Mode 0: Keypoint Detection on a Single Image
+
+| Input image                  | Output image                         |
+| ---------------------------- | ------------------------------------ |
+| ![input](images/1.png =100x) | ![output](images/stitched.png =100x) |
+
+
 
 
 ## References
