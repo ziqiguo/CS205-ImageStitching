@@ -26,8 +26,8 @@ In this project, we want to use big compute techniques to parallelize the algori
 
 
 ### Compile Dependencies:
-- GCC
-- OpenCV
+- GCC 6 or higher
+- OpenCV 3.4.0 or higher
 - pkg-config
 
 ### Compile:
@@ -82,13 +82,13 @@ pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.
 	- 0: run SURF on a single image
 	- 1: run static image match between a pair of images
 	- 2: run image stitching with webcam stream
-        - 3: run image stitching with local video files
+    - 3: run image stitching with local video files
 
 - -b | --blend_mode: (no additional argument)
          
 	- if set, run blending algorithm with stitching; otherwise, run regular stitching algorithm
 
-- -r | --resolution < >:
+- -r | --resolution (for mode:
 
 	- user-specified resolution
 
@@ -98,7 +98,7 @@ pgc++ -acc -ta=tesla:managed -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.
 
 - -t | --threaded: (OpenACC only)
 
-	- if set, one single mem copy; otherwise, do memory copy from host to device every response layer
+	- if set, using the multi-threading version for task-level parallelization
 
 - -S/L/R | --src/src1/src2 <path>
          
