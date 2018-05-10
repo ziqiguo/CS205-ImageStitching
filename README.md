@@ -88,7 +88,15 @@ pgc++ -acc -ta=tesla -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp inte
 
 ### Run Test Cases:
 
-**TODO**
+To run test cases, first compile with instructions above, but without using any parallelization (for OpenMP, remove `-fopenmp`; for OpenACC, use `g++` instead of `pgc++`). 
+
+Then run:
+
+``sh sample_test.sh``
+
+When the stitched image pops out, press ``Esc`` button.
+
+The test shell script will check the output with the standard output running on our development machine. If it does not print anything after "Took: xxx seconds" line, then you are good to go!
 
 
 

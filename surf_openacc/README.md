@@ -49,10 +49,11 @@ pgc++ -acc -ta=tesla -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp inte
 
 	- if flags are not set, will use sample image/video given by this repository
 
-### Test (On linux)
+### Test Case
 Run:
 
 ``sh sample_test.sh``
+
 The test shell script will run our simple test through our simplest image stitching option, pop up the live view of stitched image. Pressing ``Esc`` button will exit the live view and save the image data to a text file 'stitched.txt'.
 
 The test shell script will check the output with the standard output running on our development machine. If it does not print anything after "Took: xxx seconds" line, then you are good to go!

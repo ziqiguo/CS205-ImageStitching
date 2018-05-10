@@ -35,3 +35,12 @@ Adapt `g++-7` to the version of g++.
          
 	- <path> path of  image/video to be processed. For mode 0, `-S|--src` will be used for single image feature extraction; for mode 1 and mode 3, `-LR|--src1 --src2` will be used for image/video stitching from local files
 	- if flags are not set, will use sample image/video given by this repository
+
+### Test Case
+Run:
+
+``sh sample_test.sh``
+
+The test shell script will run our simple test through our simplest image stitching option, pop up the live view of stitched image. Pressing ``Esc`` button will exit the live view and save the image data to a text file 'stitched.txt'.
+
+The test shell script will check the output with the standard output running on our development machine. If it does not print anything after "Took: xxx seconds" line, then you are good to go!
