@@ -100,6 +100,8 @@ int mainStitch(int blend_mode, const char* src1, const char* src2)
     cv::imshow("stitched", stitched);
     cvWaitKey(0);
 
+    writeMatToFile(stitched, "stitched.txt");
+
     return 0;
 }
 

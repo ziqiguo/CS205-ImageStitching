@@ -50,4 +50,6 @@ inline int fRound(float flt)
     return (int) floor(flt+0.5f);
 }
 
+void writeMatToFile(cv::Mat& m, const char* filename);
+
 #endif
