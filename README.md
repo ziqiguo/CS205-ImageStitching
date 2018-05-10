@@ -98,6 +98,7 @@ When the stitched image pops out, press ``Esc`` button.
 
 The test shell script will check the output with the standard output running on our development machine. If it does not print anything after "Took: xxx seconds" line, then you are good to go!
 
+For more examples, go to the Example section and follow the command to compare with the correct outputs.
 
 
 ### Run:
