@@ -50,11 +50,9 @@ pgc++ -acc -ta=tesla -Minfo -std=c++11 -O3 -o test main.cpp fasthessian.cpp inte
 	- if flags are not set, will use sample image/video given by this repository
 
 ### Test (On linux)
-
-Before running test.sh, make sure to have the following tool installed(required to check images difference percentage):
-``sudo apt-get install imagemagick imagemagick-doc``
-
 Run:
+
 ``sh sample_test.sh``
-The test shell script will run our simple test through our simplest image stitching option, pop up the live view of stitched image. Pressing ``Esc`` button will exit the live view and save the image to file 'stitched.jpg'.
-Then the imagemagick comparing tool inside should give an output of well under 150(indicating less than 150 pixels differs due to the randomness of the algorithm).
+The test shell script will run our simple test through our simplest image stitching option, pop up the live view of stitched image. Pressing ``Esc`` button will exit the live view and save the image data to a text file 'stitched.txt'.
+
+The test shell script will check the output with the standard output running on our development machine. If it does not print anything after "Took: xxx seconds" line, then you are good to go!

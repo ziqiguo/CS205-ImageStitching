@@ -42,6 +42,8 @@ void saveSurf(char *filename, std::vector<Ipoint> &ipts);
 //! Load the SURF features from file
 void loadSurf(char *filename, std::vector<Ipoint> &ipts);
 
+void writeMatToFile(cv::Mat& m, const char* filename);
+
 //! Round float to nearest integer
 inline int fRound(float flt)
 {
